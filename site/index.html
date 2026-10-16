@@ -4557,6 +4557,23 @@ body { margin: 0; overscroll-behavior: none; }
   new ResizeObserver(layout).observe(stage);
   mark(); buildPicker(); load(mine()[0]);
   show('home', true);
+
+  // 새 버전이 올라가면 알아서 새로 연다. 휴대폰(특히 홈 화면에 추가한 앱)이 예전 화면을 붙들고 있지 않게.
+  // BUILD는 build.js가 만들 때 채워 넣는다 (index.html을 바로 열면 비어 있어서 건너뛴다).
+  const BUILD = '20261016153038';
+  async function freshCheck() {
+    if (!BUILD || document.hidden) return;
+    try {
+      const r = await fetch('version.txt?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return;
+      const v = (await r.text()).trim();
+      if (!v || v === BUILD) return;
+      try { if (sessionStorage.getItem('kkomji-reload') === v) return; sessionStorage.setItem('kkomji-reload', v); } catch (err) { /* 무시 */ }
+      location.replace(location.pathname + '?v=' + encodeURIComponent(v));
+    } catch (err) { /* 인터넷이 없으면 지금 화면 그대로 */ }
+  }
+  freshCheck();
+  document.addEventListener('visibilitychange', freshCheck);
 })();
 </script>
 </body>
