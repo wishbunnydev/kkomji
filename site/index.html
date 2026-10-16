@@ -3726,8 +3726,9 @@ body { margin: 0; overscroll-behavior: none; }
   const CL_COLORS = ['#FF9ECF', '#FFB7D9', '#C85BD8', '#FF5F9E', '#FF5B5B', '#FF8A80', '#FFA654', '#FFC9A1', '#FFD93D', '#FFE48A', '#F7C948', '#FFF2B0', '#9FE06B', '#C8F0A0', '#4CB944', '#2E8B57', '#8EC3F4', '#4D7CFE', '#A989F2', '#B07B52', '#8D6E63', '#4A4A4A', '#9AA3AE', '#FFFFFF'];
   const CL_RAINBOW = ['#FF8A80', '#FFBE76', '#FFE066', '#A8E06E', '#7FD1F7', '#9FA8F7', '#D7A6F2'];
   const CL_TOOLS = [['bucket', '쏟기'], ['roller', '페인팅'], ['brush', '붓'], ['pen', '펜'], ['stamp', '도장'], ['rainbow', '무지개'], ['sparkle', '반짝이'], ['gbrush', '반짝 붓'], ['rsparkle', '무지개 반짝']];
-  const CL_PATTERNS = ['flower', 'wave', 'dot', 'star', 'heart', 'stripe', 'check', 'bubble'];
-  const CL_FILLS = { bucket: 1, stamp: 1, rainbow: 1, sparkle: 1 };
+  // 앞 8개는 고른 색을 따라가는 무늬, 뒤 6개는 저마다 색이 정해진 알록달록 무늬
+  const CL_PATTERNS = ['flower', 'wave', 'dot', 'star', 'heart', 'stripe', 'check', 'bubble', 'rflower', 'rdot', 'rstripe', 'confetti', 'sea', 'candy'];
+  const CL_FILLS = { bucket: 1 }; // 쏟기만 콕 눌러서 채운다. 나머지는 직접 문질러야 칠해진다.
   const CL = { theme: 'dino', pic: -1, tool: 'bucket', color: '#9FE06B', pattern: 'flower', eraser: false,
     img: null, W: 0, H: 0, line: null, region: null, boxes: [], masks: new Map(),
     paint: null, scratch: null, cv: null, ctx: null, undo: [], stroke: null, busy: false, kept: new Map(), gen: 0 };
@@ -3807,25 +3808,51 @@ body { margin: 0; overscroll-behavior: none; }
         c.beginPath(); c.arc(x, y, r, 0, 7); c.stroke();
         c.fillStyle = '#fff'; c.beginPath(); c.arc(x - r * 0.35, y - r * 0.35, r * 0.25, 0, 7); c.fill(); c.fillStyle = color;
       });
+    } else if (kind === 'rflower') { // 알록달록 꽃밭
+      c.fillStyle = '#EAF7E0'; c.fillRect(0, 0, 72, 72);
+      const fl = (x, y, r, pet, cen) => {
+        c.fillStyle = pet;
+        for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; c.beginPath(); c.arc(x + Math.cos(a) * r, y + Math.sin(a) * r, r * 0.72, 0, 7); c.fill(); }
+        c.fillStyle = cen; c.beginPath(); c.arc(x, y, r * 0.65, 0, 7); c.fill();
+      };
+      fl(16, 18, 7, '#FF9ECF', '#FFE066'); fl(54, 12, 5.5, '#A989F2', '#fff');
+      fl(40, 42, 7.5, '#FFBE76', '#fff'); fl(12, 56, 5.5, '#7FD1F7', '#FFE066'); fl(58, 58, 6.5, '#FF8A80', '#fff');
+    } else if (kind === 'rdot') { // 알록달록 방울
+      c.fillStyle = '#FFFDF4'; c.fillRect(0, 0, 72, 72);
+      [[14, 14, 0], [40, 10, 1], [62, 22, 2], [22, 38, 3], [48, 40, 4], [10, 60, 5], [36, 62, 6], [62, 56, 0]].forEach(([x, y, k]) => {
+        c.fillStyle = CL_RAINBOW[k]; c.beginPath(); c.arc(x, y, 7, 0, 7); c.fill();
+      });
+    } else if (kind === 'rstripe') { // 무지개 빗금
+      c.lineWidth = 8.5; c.lineCap = 'butt';
+      for (let i = -72; i <= 144; i += 12) {
+        c.strokeStyle = CL_RAINBOW[((i + 72) / 12) % 6];
+        c.beginPath(); c.moveTo(i, 0); c.lineTo(i + 72, 72); c.stroke();
+      }
+    } else if (kind === 'confetti') { // 색종이
+      c.fillStyle = '#FFFDF4'; c.fillRect(0, 0, 72, 72);
+      [[10, 12, 0, 0.5], [30, 8, 1, -0.4], [52, 16, 2, 0.9], [66, 34, 3, -0.8], [18, 32, 4, 0.2],
+        [42, 36, 5, -0.6], [8, 52, 6, 0.7], [32, 56, 0, -0.3], [56, 58, 1, 0.4]].forEach(([x, y, k, rot]) => {
+        c.save(); c.translate(x, y); c.rotate(rot); c.fillStyle = CL_RAINBOW[k];
+        if (Math.abs(rot) > 0.55) { c.beginPath(); c.arc(0, 0, 3.5, 0, 7); c.fill(); } else c.fillRect(-5, -2.5, 10, 5);
+        c.restore();
+      });
+    } else if (kind === 'sea') { // 파도
+      c.fillStyle = '#BFE8E2'; c.fillRect(0, 0, 72, 72);
+      c.strokeStyle = '#2FB7A8'; c.lineWidth = 5; c.lineCap = 'round';
+      for (let y = 10; y < 80; y += 18) {
+        c.beginPath();
+        for (let x = -4; x <= 76; x += 4) { const yy = y + Math.sin(x / 72 * Math.PI * 2) * 5; x === -4 ? c.moveTo(x, yy) : c.lineTo(x, yy); }
+        c.stroke();
+      }
+      c.fillStyle = '#fff';
+      [[14, 20], [50, 16], [32, 40], [62, 44], [10, 60], [44, 62]].forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 2.5, 0, 7); c.fill(); });
+    } else if (kind === 'candy') { // 사탕 줄무늬
+      c.fillStyle = '#FFE9F2'; c.fillRect(0, 0, 72, 72);
+      c.fillStyle = '#FF9ECF'; c.fillRect(4, 0, 10, 72); c.fillRect(40, 0, 10, 72);
+      c.fillStyle = '#A8E8DC'; c.fillRect(22, 0, 10, 72); c.fillRect(58, 0, 10, 72);
+      clHeartS(c, 18, 18, 4.5, '#fff'); clHeartS(c, 54, 40, 4.5, '#fff'); clHeartS(c, 36, 60, 4.5, '#fff');
     }
     return t;
-  }
-  function clSprinkle(c, minx, miny, maxx, maxy, col) { // 흰 반짝이 뿌리기
-    const area = (maxx - minx) * (maxy - miny);
-    for (let i = 0; i < area / 2600 + 8; i++) {
-      const x = minx + Math.random() * (maxx - minx), y = miny + Math.random() * (maxy - miny);
-      if (Math.random() < 0.4) clSpark4(c, x, y, 3 + Math.random() * 5, col);
-      else { c.fillStyle = col; c.beginPath(); c.arc(x, y, 1.5 + Math.random() * 2.5, 0, 7); c.fill(); }
-    }
-  }
-  function clGlitter(c, minx, miny, maxx, maxy, color) { // 반짝이 가루
-    const area = (maxx - minx) * (maxy - miny), lite = clMix(color, 0.55), dark = clDark(color, 0.25);
-    for (let i = 0; i < area / 420 + 20; i++) {
-      const x = minx + Math.random() * (maxx - minx), y = miny + Math.random() * (maxy - miny);
-      c.fillStyle = Math.random() < 0.5 ? lite : dark;
-      c.beginPath(); c.arc(x, y, 1 + Math.random() * 2.2, 0, 7); c.fill();
-    }
-    clSprinkle(c, minx, miny, maxx, maxy, 'rgba(255,255,255,.95)');
   }
   // ----- 도안 분석: 선과 칸 나누기 -----
   function clAnalyze(img) {
@@ -3925,12 +3952,29 @@ body { margin: 0; overscroll-behavior: none; }
     const r = CL.cv.getBoundingClientRect();
     return [(e.clientX - r.left) / r.width * CL.W, (e.clientY - r.top) / r.height * CL.H];
   }
-  function clSeg(x0, y0, x1, y1) { // 붓 한 획 (매끈하게: 포인터가 지나간 자리들을 둥근 선으로 잇는다)
+  function clSeg(x0, y0, x1, y1) { // 붓 한 획: 문지른 자리만 칠해진다 (쏟기만 빼고 모든 도구가 이렇게 그린다)
     const s = CL.stroke, c = s.cvs.getContext('2d'), t = s.t;
-    const w = { roller: 56, brush: 30, pen: 10, gbrush: 26, rsparkle: 30 }[t] || 24;
+    const w = { roller: 56, brush: 30, pen: 10, stamp: 48, rainbow: 32, sparkle: 36, gbrush: 26, rsparkle: 30 }[t] || 24;
     const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy);
     c.lineCap = c.lineJoin = 'round';
-    c.strokeStyle = t === 'rsparkle' ? `hsl(${(s.dist * 0.5) % 360}, 90%, 72%)` : CL.color;
+    if (t === 'sparkle') { // 반짝이: 문지르면 반짝 가루가 뿌려진다 (바탕칠 없이 가루만)
+      const lite = clMix(CL.color, 0.5), dark = clDark(CL.color, 0.2);
+      for (let d = 0; ; d += 5) {
+        for (let k = 0; k < 3; k++) {
+          const a = Math.random() * Math.PI * 2, rr = Math.random() * w / 2;
+          const px = x0 + (len ? dx * d / len : 0) + Math.cos(a) * rr;
+          const py = y0 + (len ? dy * d / len : 0) + Math.sin(a) * rr;
+          const roll = Math.random();
+          if (roll < 0.18) clSpark4(c, px, py, 2.5 + Math.random() * 4, 'rgba(255,255,255,.95)');
+          else { c.fillStyle = roll < 0.6 ? lite : (roll < 0.85 ? CL.color : dark); c.beginPath(); c.arc(px, py, 1.2 + Math.random() * 2.2, 0, 7); c.fill(); }
+        }
+        if (d >= len) break;
+      }
+      s.dist += len;
+      return;
+    }
+    if (t === 'stamp' && !s.pat) s.pat = c.createPattern(clPattern(CL.pattern, CL.color), 'repeat'); // 도장: 무늬가 붓이 된다
+    c.strokeStyle = t === 'stamp' ? s.pat : (t === 'rainbow' || t === 'rsparkle') ? `hsl(${(s.dist * 0.5) % 360}, 90%, 72%)` : CL.color;
     c.fillStyle = c.strokeStyle;
     c.beginPath(); c.arc(x1, y1, w / 2, 0, 7); c.fill();
     if (len > 0.5) { c.lineWidth = w; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); }
@@ -3968,22 +4012,13 @@ body { margin: 0; overscroll-behavior: none; }
     };
     requestAnimationFrame(step);
   }
-  function clFill(tool, x, y) {
+  function clFill(x, y) { // 쏟기: 누른 칸에 고른 색이 퍼진다
     const id = clRegionAt(x, y);
     if (id < 0) return;
     const [minx, miny, maxx, maxy] = CL.boxes[id];
     const bx = minx - 4, by = miny - 4, bw = maxx - minx + 9, bh = maxy - miny + 9;
     const tmp = clBlank(), c = tmp.getContext('2d');
-    if (tool === 'bucket') { c.fillStyle = CL.color; c.fillRect(bx, by, bw, bh); }
-    else if (tool === 'stamp') { c.fillStyle = c.createPattern(clPattern(CL.pattern, CL.color), 'repeat'); c.fillRect(bx, by, bw, bh); }
-    else if (tool === 'rainbow') {
-      const h = Math.max(26, bh / 7);
-      for (let i = 0, yy = by; yy <= by + bh; yy += h, i++) { c.fillStyle = CL_RAINBOW[i % 7]; c.fillRect(bx, yy, bw, h + 1); }
-      clSprinkle(c, minx, miny, maxx, maxy, 'rgba(255,255,255,.9)');
-    } else if (tool === 'sparkle') {
-      c.fillStyle = CL.color; c.fillRect(bx, by, bw, bh);
-      clGlitter(c, minx, miny, maxx, maxy, CL.color === '#FFFFFF' ? '#F7C948' : CL.color);
-    }
+    c.fillStyle = CL.color; c.fillRect(bx, by, bw, bh);
     c.globalCompositeOperation = 'destination-in';
     c.drawImage(clMask(id), 0, 0);
     clSnap();
@@ -4001,7 +4036,7 @@ body { margin: 0; overscroll-behavior: none; }
       clDraw();
       return;
     }
-    if (CL_FILLS[CL.tool]) { if (CL.region) clFill(CL.tool, x, y); return; }
+    if (CL_FILLS[CL.tool]) { if (CL.region) clFill(x, y); return; }
     let mask = null;
     if (CL.region) {
       const id = clRegionAt(x, y);
