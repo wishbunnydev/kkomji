@@ -4271,11 +4271,19 @@ body { margin: 0; overscroll-behavior: none; }
     if (cur && theme !== CL_THEMES[0][0]) cur.scrollIntoView({ block: 'start' });
     else g.scrollTop = 0;
   }
-  function openColoring() {
+  // 첫 화면의 테마 타일에서 들어오면 그 테마 도안부터 보여 준다
+  function openColoring(theme) {
     show('coloring', true);
     $('cl-play').hidden = true; $('cl-pick').hidden = false;
-    clPicker(CL.theme);
+    clPicker(theme || CL.theme);
   }
+  // 첫 화면 타일 이름: 다른 놀이처럼 흉내말로
+  const CL_TILE = {
+    dino: '쿵쾅쿵쾅 공룡', animal: '멍멍 야옹 동물', vehicle: '부릉부릉 탈것', ocean: '첨벙첨벙 바다',
+    space: '슝슝 우주', food: '냠냠 음식', toy: '알록달록 장난감', shape: '동글동글 도형',
+    music: '딩동댕 악기', nature: '살랑살랑 자연', princess: '반짝반짝 공주', bug: '꼼질꼼질 곤충',
+    robot: '삐빅삐빅 로봇', upper: 'ABC 대문자', lower: 'abc 소문자', hangul: '가나다 한글',
+  };
   CL.cv = $('cl-canvas');
   CL.ctx = CL.cv.getContext('2d');
   CL.cv.addEventListener('pointerdown', e => { wake(); clPopHide(); e.preventDefault(); clDown(e); });
@@ -4423,6 +4431,8 @@ body { margin: 0; overscroll-behavior: none; }
       SQUARE.forEach((q, k) => mk('polygon', { points: pts(q), class: 'c' + k }, g));
     } else if (id.startsWith('k-')) {
       mk('text', { x: 30, y: 32, class: 'emo' }, s).textContent = KNOW[id.slice(2)].icon;
+    } else if (id.startsWith('c-')) {
+      mk('text', { x: 30, y: 32, class: 'emo' }, s).textContent = CL_THEMES.find(t => t[0] === id.slice(2))[3];
     } else if (id === 'make10') {
       mk('rect', { x: 5, y: 15, width: 50, height: 30, rx: 7, class: 'box' }, s);
       for (let i = 0; i < 10; i++) mk('circle', { cx: 12 + (i % 5) * 9, cy: i < 5 ? 24 : 36, r: 3.6, class: i < 7 ? 'c0' : 'c1' }, s);
@@ -4456,10 +4466,6 @@ body { margin: 0; overscroll-behavior: none; }
       mk('polygon', { points: '10,25 8,34 19,26', class: 'c3' }, s);
       mk('rect', { x: 24, y: 33, width: 33, height: 21, rx: 10, class: 'c1 dab' }, s);
       mk('polygon', { points: '50,52 52,61 41,53', class: 'c1' }, s);
-    } else if (id === 'coloring') {
-      // 쓱싹쓱싹: 붓과 색 방울들
-      mk('path', { d: 'M46 8 L24 30 M20 34 c-3 0 -6 3 -6 6 0 2 -3 3 -2 4 2 2 9 2 11 -2 1 -3 0 -8 -3 -8 Z', class: 'ln' }, s);
-      [[14, 14, 0], [28, 10, 1], [40, 46, 3]].forEach(([cx, cy, k]) => mk('circle', { cx, cy, r: 6, class: 'c' + k + ' dab' }, s));
     } else {
       mk('circle', { cx: 11, cy: 30, r: 8, class: 'c1' }, s);
       mk('polygon', { points: '30,21 39,38 21,38', class: 'c3' }, s);
@@ -4503,14 +4509,14 @@ body { margin: 0; overscroll-behavior: none; }
     { id: 'magic', name: '뾰로롱', sub: '마방진', tone: 'coral' },
     { id: 'word', name: '이어이어', sub: '끝말잇기', tone: 'coral', area: 'word' },
     { id: 'music', name: '랄랄라', sub: '내 말이 노래가 돼', tone: 'yellow', area: 'music' },
-    { id: 'coloring', name: '쓱싹쓱싹', sub: '컬러링', tone: 'blue', area: 'art' },
+    ...CL_THEMES.map(([key, ko, en], i) => ({ id: 'c-' + key, name: CL_TILE[key], sub: en + ' 색칠하기', tone: ['blue', 'coral', 'sage', 'yellow'][i % 4], area: 'art' })),
     ...Object.entries(KNOW).map(([key, t], i) => ({ id: 'k-' + key, name: t.name, sub: t.sub, tone: ['blue', 'coral', 'sage', 'yellow'][i % 4], area: 'know' })),
   ];
   const go = id => {
     wake();
     if (id === 'music') { openMusic(); return; }
     if (id === 'word') { openWord(); return; }
-    if (id === 'coloring') { openColoring(); return; }
+    if (id.startsWith('c-')) { openColoring(id.slice(2)); return; }
     if (id !== 'tangram') { openQuiz(id); return; }
     mark(); if (boardLevel !== level) load(cur); // 다른 놀이에서 난이도를 바꿨으면 칠교판도 그 난이도로
     show('tangram');
