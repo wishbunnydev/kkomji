@@ -3401,7 +3401,7 @@ body { margin: 0; overscroll-behavior: none; }
     { w: '바나나', e: '🍌' }, { w: '바다', e: '🌊' }, { w: '바지', e: '👖' },
     { w: '박수', e: '👏' }, { w: '박쥐', e: '🦇' }, { w: '방울', e: '🔔' }, { w: '배추', e: '🥬' },
     { w: '버스', e: '🚌' }, { w: '버섯', e: '🍄' }, { w: '벌레', e: '🐛' }, { w: '병아리', e: '🐥' },
-    { w: '복숭아', e: '🍑' }, { w: '북극곰' }, { w: '불꽃', e: '🎆' },
+    { w: '범고래', e: '🐋' }, { w: '복숭아', e: '🍑' }, { w: '북극곰' }, { w: '불꽃', e: '🎆' },
     { w: '비행기', e: '✈️' }, { w: '비누', e: '🧼' },
     { w: '사과', e: '🍎' }, { w: '사자', e: '🦁' }, { w: '사탕', e: '🍬' },
     { w: '산타', e: '🎅' }, { w: '상어', e: '🦈' }, { w: '새우', e: '🦐' }, { w: '선물', e: '🎁' },
@@ -3412,7 +3412,8 @@ body { margin: 0; overscroll-behavior: none; }
     { w: '연필', e: '✏️' }, { w: '염소', e: '🐐' },
     { w: '오리', e: '🦆' }, { w: '오이', e: '🥒' }, { w: '오징어', e: '🦑' },
     { w: '우산', e: '☂️' }, { w: '우유', e: '🥛' }, { w: '유령', e: '👻' }, { w: '음료수', e: '🥤' },
-    { w: '이빨', e: '🦷' }, { w: '자동차', e: '🚗' }, { w: '자전거', e: '🚲' }, { w: '자석', e: '🧲' },
+    { w: '이빨', e: '🦷' }, { w: '이불', e: '🛌' }, { w: '어항' },
+    { w: '자동차', e: '🚗' }, { w: '자전거', e: '🚲' }, { w: '자석', e: '🧲' },
     { w: '장갑', e: '🧤' }, { w: '장미', e: '🌹' }, { w: '전화', e: '📞' },
     { w: '조개', e: '🐚' }, { w: '주사위', e: '🎲' }, { w: '주전자', e: '🫖' },
     { w: '지구', e: '🌍' }, { w: '지렁이', e: '🪱' },
@@ -3501,7 +3502,7 @@ body { margin: 0; overscroll-behavior: none; }
     }
     if (!cand.length) cand = usable(null);
     if (!cand.length) { WG.used.clear(); cand = usable(null); } // 사전을 다 썼다: 처음부터 다시 쓴다
-    const k = wPickDeep(cand, true, 4);
+    const k = wPickDeep(cand, true, 6);
     WG.used.add(k.w); WG.kw = k.w; WG.need = wLast(k.w);
     wRow('kkom', k.w, true);
     wSpeakTurn();
@@ -3541,7 +3542,7 @@ body { margin: 0; overscroll-behavior: none; }
   function wCards() {
     const row = $('wbottom'); row.replaceChildren();
     const okPool = wPool(WG.need, true);
-    const ok = wPickDeep(okPool, false, 3); // 정답 카드도 뒤가 이어지는 낱말을 고른다
+    const ok = wPickDeep(okPool, false, 5); // 정답 카드도 뒤가 멀리 이어지는 낱말을 고른다
     const wrong = shuffle(WORDS.filter(x => x.e && x.w !== ok.w && x.w[0] !== WG.need && !WG.used.has(x.w))).slice(0, 2);
     shuffle([ok, ...wrong]).forEach(c => {
       const b = el('button', 'wcard'); b.type = 'button';
