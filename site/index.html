@@ -3170,25 +3170,19 @@ body { margin: 0; overscroll-behavior: none; }
       const rate = Math.min(1.26, Math.max(0.8, Math.pow(2, (tgt - (s - (lift || 0))) / 12)));
       return { ...sg, from, tgt, t, dur: sg.len / sr / rate, rate, freq: 261.63 * Math.pow(2, tgt / 12), w };
     };
-    const notes = seg.map((sg, i) => {
-      let t = (sg.at - t0s) / sr; // 아이가 말한 그 시각 그대로
-      const snap = Math.round(t / eighth) * eighth;
-      if (Math.abs(snap - t) < 0.09) t = snap; // 박에 아주 가까우면 살짝만 당겨 준다
-      return mkNote(sg, t, wordOf(i), 0);
-    });
+    // 아이가 말한 그 시각 그대로 음을 놓는다 (당기면 앞뒤 음절이 겹친다)
+    const notes = seg.map((sg, i) => mkNote(sg, (sg.at - t0s) / sr, wordOf(i), 0));
     let len = Math.max(...notes.map(m => m.t + m.dur));
-    // 끝맺음: 마지막 낱말(가사가 없으면 마지막 음절)을 통째로 두 번 더 부른다.
-    // 한 번은 한 음 올려서, 한 번은 제 음으로 — 통째로 틀기 때문에 말이 그대로 들린다.
+    // 끝맺음: 한 박 쉬고 마지막 낱말(가사가 없으면 마지막 음절)을 메아리처럼 한 번 더 부른다.
+    // 통째로 제 음 그대로 틀기 때문에 말이 또렷하게 들린다.
     const lastW = words.length - 1;
     const ti = lastW >= 0 ? notes.findIndex(m => m.w === lastW) : n - 1;
     const chunk = { at: seg[ti].at, len: seg[n - 1].at + seg[n - 1].len - seg[ti].at };
     if (n >= 2 && chunk.len / sr <= 1.6) {
-      [2, 0].forEach(lift => {
-        const t = Math.ceil((len + eighth) / eighth) * eighth; // 다음 박 머리에서
-        const m = mkNote(chunk, t, lastW >= 0 ? lastW : -1, lift);
-        notes.push(m);
-        len = t + m.dur;
-      });
+      const t = Math.ceil((len + eighth * 2) / eighth) * eighth; // 한 박 쉬고 다음 박 머리에서
+      const m = mkNote(chunk, t, lastW >= 0 ? lastW : -1, 0);
+      notes.push(m);
+      len = t + m.dur;
     }
     return { notes, len: len + 0.1, eighth, barE, mood, intro: eighth * 4, words, text: (text || '').trim() };
   }
@@ -3253,15 +3247,15 @@ body { margin: 0; overscroll-behavior: none; }
     notes.forEach(nn => {
       const s = ctx.createBufferSource(), e = ctx.createGain(), at = m0 + nn.t;
       s.buffer = wav; s.playbackRate.value = nn.rate;
-      // 부드럽게 들어와서, 다음 음과 살짝 겹치며 흘러 나간다 (뚝뚝 끊기지 않게)
+      // 부드럽게 들어왔다가 제 길이 안에서 잦아든다. 음절 사이는 잔향이 메워 준다.
       e.gain.setValueAtTime(0.0001, at);
-      e.gain.linearRampToValueAtTime(0.9, at + 0.025);
-      e.gain.setValueAtTime(0.9, at + Math.max(0.03, nn.dur - 0.02));
-      e.gain.linearRampToValueAtTime(0.0001, at + nn.dur + 0.12);
+      e.gain.linearRampToValueAtTime(0.9, at + 0.02);
+      e.gain.setValueAtTime(0.9, at + Math.max(0.02, nn.dur - 0.08));
+      e.gain.linearRampToValueAtTime(0.0001, at + nn.dur);
       s.connect(e).connect(mix);
-      s.start(at, nn.at / M.sr, Math.min(nn.len / M.sr, (nn.dur + 0.18) * nn.rate));
+      s.start(at, nn.at / M.sr, nn.len / M.sr); // 딱 제 음절까지만 (다음 음절을 미리 틀지 않는다)
       nodes.push(s);
-      osc('triangle', nn.freq, at, nn.dur + 0.12, 0.06, 0.05); // 같은 음을 밑에 깔아 가락을 또렷하게
+      osc('triangle', nn.freq, at, nn.dur + 0.1, 0.05, 0.05); // 같은 음을 밑에 깔아 가락을 또렷하게
     });
     // 반주: 느낌마다 다르게 친다 (bounce 통통 / march 쿵쿵 / waltz 쿵짝짝 / soft 또르르)
     const ok = at => at < m0 + len - 0.01; // 노래가 끝난 뒤에는 치지 않는다
@@ -3437,7 +3431,11 @@ body { margin: 0; overscroll-behavior: none; }
   const wShow = () => !$('view-word').hidden;
   // 끝말잇기 말은 말해 주기를 꺼 뒀어도 읽어 준다 (글 모르는 아이도 놀 수 있게). 낱말마다 녹음이 있다 (voice-list.js)
   const wSay = (text, queue) => say(text, queue, true, true);
-  const wProgress = () => $('wprog').replaceChildren(...Array.from({ length: WG.goal }, (_, i) => el('span', i < WG.n ? 'on' : '')));
+  // 점 다섯 개가 다 차면 칭찬하고, 다음 낱말부터 다시 처음부터 채운다
+  const wProgress = () => {
+    const d = WG.n && WG.n % WG.goal === 0 ? WG.goal : WG.n % WG.goal;
+    $('wprog').replaceChildren(...Array.from({ length: WG.goal }, (_, i) => el('span', i < d ? 'on' : '')));
+  };
   // 타임라인 말풍선 한 줄: 꼼지는 왼쪽, 아이(세모)는 오른쪽. now가 참이면 지금 이어야 하는 낱말(크게, 읽어 주는 단추 포함)
   function wRow(who, word, now) {
     const tl = $('wtl');
@@ -3480,26 +3478,24 @@ body { margin: 0; overscroll-behavior: none; }
     wSpeakTurn();
     if (WG.mode === 'card') wCards(); else wMicUI();
   }
-  // 아이가 맞게 이었다: 타임라인에 올리고, 다섯 개를 이으면 축하한다
+  // 아이가 맞게 이었다: 매번 칭찬하지 않고 꼼지가 바로 다음 낱말을 잇는다.
+  // 다섯 개를 이을 때마다 한 번씩 크게 칭찬하고, 놀이는 계속 이어진다.
   function wGood(word) {
     WG.busy = true; pop();
     WG.used.add(word);
     wRow('semo', word);
     WG.n++; wProgress();
-    const praise = pick(PRAISE);
-    feedback(true, praise, '');
-    wSay(praise);
     $('wbottom').replaceChildren();
-    if (WG.n >= WG.goal) {
+    const cheer5 = WG.n % WG.goal === 0;
+    if (cheer5) {
+      const praise = pick(PRAISE);
       WG.won = true;
-      setTimeout(() => {
-        if (!WG.won || !wShow()) return;
-        $('wwin').hidden = false; fanfare(); confetti($('wfx'), () => WG.won);
-        wSay('참 잘했어! 말 기차가 길어졌네. 한 번 더 할까?');
-      }, 950);
-    } else {
-      setTimeout(() => { if (wShow() && WG.busy) wTurn(wLast(word)); }, 1000);
+      fanfare(); confetti($('wfx'), () => WG.won);
+      setTimeout(() => { WG.won = false; }, 1500);
+      feedback(true, praise, `벌써 낱말을 ${WG.n}개나 이었어!`);
+      wSay(`${praise} 벌써 낱말을 ${WG.n}개나 이었어!`);
     }
+    setTimeout(() => { if (wShow() && WG.busy) wTurn(wLast(word)); }, cheer5 ? 1700 : 450);
   }
   // why는 말풍선에 글로 보여 주고, 읽어 줄 때는 녹음이 있는 문장(speech)으로 말한다
   function wMiss(btn, why, speech) {
