@@ -469,8 +469,12 @@ button.day { cursor: pointer; }
 
 /* ---------- 랄랄라: 내 말이 노래가 돼 ---------- */
 .mwrap { justify-content: center; }
-.mstage { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; width: 100%; flex: 1; min-height: 0; }
-.mstage svg { width: min(100%, 620px); height: 100%; max-height: 320px; }
+.mstage { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 100%; flex: 1; min-height: 0; }
+.mstage svg { width: min(100%, 620px); flex: 0 1 auto; min-height: 0; max-height: 300px; height: auto; }
+/* 받아적은 말은 가사로 보여 주고, 노래에 맞춰 부르는 낱말이 커진다 */
+.mlyrics { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; font-size: 1.7rem; line-height: 1.25; word-break: keep-all; text-align: center; }
+.mly { color: var(--wc, inherit); transition: transform .12s; }
+.mly.on { transform: scale(1.25); color: var(--pop); }
 .mstage .gi { width: min(150px, 34%); height: auto; aspect-ratio: 1; opacity: .35; }
 .mstage .gi .ln { stroke: var(--ink); } /* 어두운 화면에서도 음표 기둥이 보이게 */
 .mline { stroke: var(--line); stroke-width: .5; }
@@ -496,7 +500,13 @@ button.day { cursor: pointer; }
   border: 3px solid var(--accent); background: var(--accent); color: var(--on-accent); cursor: pointer;
 }
 .mplay svg.ico { width: 36px; height: 36px; }
-.mic:focus-visible, .mplay:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.msave {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 3px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer;
+}
+.msave svg.ico { width: 28px; height: 28px; }
+.mic:focus-visible, .mplay:focus-visible, .msave:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 
 /* ---------- 휴대폰: 메뉴는 작게 한 줄로, 놀이판은 크게 ---------- */
 @media (max-width: 640px), (max-height: 520px) {
@@ -551,6 +561,8 @@ button.day { cursor: pointer; }
   .mic svg.ico { width: 44px; height: 44px; }
   .mplay { width: 64px; height: 64px; }
   .mplay svg.ico { width: 30px; height: 30px; }
+  .msave { width: 52px; height: 52px; }
+  .msave svg.ico { width: 24px; height: 24px; }
   .mdots span { width: 14px; height: 14px; }
   .win-card { gap: 12px; padding: 18px 20px; }
   .win-card h2 { font-size: 1.8rem; }
@@ -679,12 +691,16 @@ body { margin: 0; overscroll-behavior: none; }
   <button class="chip" id="home-m" type="button">홈</button>
   <span id="host-m"></span>
   <h1>랄랄라</h1>
+  <div class="group end">
+    <button class="chip" id="m-lang" type="button">한글</button>
+  </div>
 </header>
 <div class="stage qwrap mwrap">
   <div class="mstage" id="mstage"></div>
   <div class="mbtns">
     <button class="mic" id="m-rec" type="button" aria-label="말하기"></button>
     <button class="mplay" id="m-play" type="button" aria-label="노래 다시 듣기" hidden></button>
+    <button class="msave" id="m-save" type="button" aria-label="노래 저장하기" hidden></button>
   </div>
 </div>
 <p class="hint" id="mhint"></p>
@@ -971,6 +987,7 @@ body { margin: 0; overscroll-behavior: none; }
   // 말해 주기는 꺼 둔 채로 시작한다. 꺼 둬도 읽어 줘 단추와 수수께끼 정답은 읽어 준다.
   let voice = false;
   let dotStep = 1;   // 점 잇기에서 고른 뛰어 세기 (1, 2, 3, 4, 5, 10)
+  let mLang = 'ko';  // 랄랄라 받아적기 말: 한글(ko) 또는 영어(en)
   let ql = {}; // 문제 놀이마다 고른 단계
   try {
     const sv = JSON.parse(localStorage.getItem('chilgyo') || '{}');
@@ -979,8 +996,9 @@ body { margin: 0; overscroll-behavior: none; }
     if (sv.v3 === true) voice = true; // 말해 주기를 직접 켠 경우만
     if ([1, 2, 3, 4, 5, 10].includes(sv.dotStep)) dotStep = sv.dotStep;
     if (sv.ql && typeof sv.ql === 'object') ql = sv.ql;
+    if (sv.mlang === 'en') mLang = 'en';
   } catch (err) { /* 저장된 값이 없어도 된다 */ }
-  const save = () => { try { localStorage.setItem('chilgyo', JSON.stringify({ level, sets, ql, voice, v3: voice, dotStep })); } catch (err) { /* 무시 */ } };
+  const save = () => { try { localStorage.setItem('chilgyo', JSON.stringify({ level, sets, ql, voice, v3: voice, dotStep, mlang: mLang })); } catch (err) { /* 무시 */ } };
   let pieces = [], slots = [], box = null, unit = 1;
   let W = 0, H = 0, s = 1, ox = 0, oy = 0;
   const active = new Map();
@@ -2755,18 +2773,34 @@ body { margin: 0; overscroll-behavior: none; }
 
   // ================= 랄랄라: 내 말이 노래가 돼 =================
   // 아이가 한 말을 음절로 자르고, 음절마다 음 높이를 바꿔 아이 목소리 그대로 노래처럼 들려 준다.
-  const PENT = [0, 2, 4, 7, 9, 12]; // 도 레 미 솔 라 높은도 (C 펜타토닉: 어떤 차례로 놓아도 어울린다)
-  const TUNES = [ // 노랫가락 틀(펜타토닉 몇 번째 음인지). 음절이 많으면 처음부터 되풀이한다.
-    [0, 0, 3, 3, 4, 4, 3, 2, 2, 1, 1, 0],
-    [2, 1, 0, 1, 2, 2, 2, 1, 1, 1, 2, 4, 4],
-    [0, 1, 2, 3, 4, 3, 2, 1, 0, 2, 4, 0],
-    [4, 4, 3, 2, 3, 4, 2, 0, 1, 2, 1, 0],
+  // 화음(도에서 몇 반음 위인지)과 그 뿌리 저음. 마디마다 하나씩 짚는다.
+  const CHORDS = { C: [0, 4, 7], F: [5, 9, 12], G: [7, 11, 14], Am: [9, 12, 16], Cm: [0, 3, 7], Ab: [8, 12, 15], Bb: [10, 14, 17] };
+  const ROOTS = { C: 130.81, F: 87.31, G: 98, Am: 110, Cm: 130.81, Ab: 103.83, Bb: 116.54 };
+  // 작곡 스타일: 아이 말의 느낌에 따라 빠르기, 음계(장조/단조), 화음 진행, 반주 느낌이 달라진다.
+  // lift는 가락이 올라가는 높이(산 모양의 봉우리)다.
+  const MOODS = {
+    neat:   { name: '밝은',   bpm: 108, scale: [0, 2, 4, 7, 9, 12],  prog: ['C', 'F', 'G', 'C'],    feel: 'bounce', lift: 3 },
+    happy:  { name: '신나는', bpm: 126, scale: [0, 2, 4, 7, 9, 12],  prog: ['C', 'Am', 'F', 'G'],   feel: 'bounce', lift: 4 },
+    brave:  { name: '씩씩한', bpm: 112, scale: [0, 2, 4, 7, 9, 12],  prog: ['C', 'C', 'F', 'G'],    feel: 'march',  lift: 3 },
+    sad:    { name: '슬픈',   bpm: 84,  scale: [0, 3, 5, 7, 10, 12], prog: ['Cm', 'Ab', 'Bb', 'Cm'], feel: 'soft',   lift: 2 },
+    sleepy: { name: '포근한', bpm: 76,  scale: [0, 2, 4, 7, 9, 12],  prog: ['C', 'Am', 'F', 'G'],   feel: 'waltz',  lift: 2 },
+  };
+  const MOODWORDS = [
+    ['sad', /슬퍼|슬프|싫어|아파|아야|울어|울었|눈물|무서|화나|힘들|sad|cry|scar|hurt|angry/i],
+    ['sleepy', /잘래|잘 거야|졸려|자장|코 자|쿨쿨|꿈나라|달님|별님|포근|sleep|dream|night|moon/i],
+    ['happy', /좋아|좋은|신나|신났|재밌|재미|사랑|최고|행복|야호|웃|놀자|happy|love|fun|yay|best/i],
+    ['brave', /공룡|로봇|자동차|기차|비행기|소방|경찰|슈퍼|용감|씩씩|힘세|번개|티라노|dino|robot|car|train|hero|strong/i],
   ];
-  const M = { state: 'idle', gen: 0, buf: null, sr: 0, song: null, dots: [], nodes: [], out: null, timer: 0, mic: null, recData: null };
+  function mMood(text) {
+    for (const [k, re] of MOODWORDS) if (re.test(text || '')) return k;
+    return text ? 'neat' : pick(['neat', 'happy']); // 받아적은 말이 없으면 밝거나 신나게
+  }
+  const M = { state: 'idle', gen: 0, buf: null, sr: 0, song: null, dots: [], chars: [], nodes: [], out: null, timer: 0, mic: null, recData: null, srec: null, text: '' };
   const mRec = $('m-rec'), mPlay = $('m-play'), mStage = $('mstage'), mHint = $('mhint');
   const MWORDS = {
     idle: '단추를 누르고 아무 말이나 해 봐. 꼼지가 노래로 만들어 줄게!',
     rec: '말해 봐! 말이 끝나면 꼼지가 노래를 만들어.',
+    cook: '뚝딱뚝딱, 꼼지가 노래를 만드는 중이야',
     made: '내 목소리로 만든 노래야! 노란 단추로 다시 들어 봐.',
     play: '랄랄라, 꼼지가 네 말로 노래를 불러!',
   };
@@ -2775,7 +2809,9 @@ body { margin: 0; overscroll-behavior: none; }
     mRec.classList.toggle('live', state === 'rec');
     mRec.setAttribute('aria-label', state === 'rec' ? '그만 말하기' : '말하기');
     mPlay.hidden = !M.song || state === 'rec';
-    mHint.textContent = MWORDS[state];
+    $('m-save').hidden = mPlay.hidden;
+    // 노래가 다 되면 어떤 느낌의 노래인지 알려 준다
+    mHint.textContent = state === 'made' && M.song ? M.song.mood.name + ' 노래가 됐어! 노란 단추로 다시 들어 봐.' : MWORDS[state];
   }
   function mNodesStop() { // 울리고 있는 노래를 멈춘다
     clearInterval(M.timer); M.timer = 0;
@@ -2792,7 +2828,8 @@ body { margin: 0; overscroll-behavior: none; }
   // 화면을 나가거나 새로 시작할 때 모두 멈춘다. reset이 참이면 만든 노래도 지운다.
   function musicStop(reset) {
     M.gen++; mNodesStop(); mMicDrop(); M.recData = null;
-    if (reset) { M.song = null; M.buf = null; M.dots = []; mStage.replaceChildren(gameIcon('music')); } // 기다릴 때는 흐린 음표만
+    if (M.srec) { try { M.srec.onend = null; M.srec.abort(); } catch (err) { /* 무시 */ } M.srec = null; }
+    if (reset) { M.song = null; M.buf = null; M.dots = []; M.chars = []; mStage.replaceChildren(gameIcon('music')); } // 기다릴 때는 흐린 음표만
     mSet('idle');
   }
   function openMusic() {
@@ -2809,6 +2846,18 @@ body { margin: 0; overscroll-behavior: none; }
     mStage.replaceChildren(row);
     mSet('rec');
     const g = ++M.gen;
+    // 할 수 있으면 말도 받아적는다 (가사가 된다). 안 되는 기기면 가사 없이 노래만 만든다.
+    M.text = ''; M.srec = null;
+    try {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SR) {
+        const r = new SR();
+        r.lang = mLang === 'en' ? 'en-US' : 'ko-KR';
+        r.continuous = true; r.interimResults = true;
+        r.onresult = e => { let t = ''; for (const x of e.results) t += x[0].transcript; M.text = t; };
+        r.start(); M.srec = r;
+      }
+    } catch (err) { M.srec = null; }
     let stream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
@@ -2850,17 +2899,30 @@ body { margin: 0; overscroll-behavior: none; }
     const buf = new Float32Array(len);
     let at = 0; data.forEach(c => { buf.set(c, at); at += c.length; });
     const seg = mSyllables(buf, sr);
+    const r = M.srec; M.srec = null;
     if (!seg.length) {
-      mSet('idle'); mStage.replaceChildren();
+      if (r) { try { r.abort(); } catch (err) { /* 무시 */ } }
+      mSet('idle'); mStage.replaceChildren(gameIcon('music'));
       feedback(false, '아무 말도 못 들었어', '단추를 누르고 큰 소리로 말해 봐.');
       say('아무 말도 못 들었어. 단추를 누르고 큰 소리로 말해 봐.');
       return;
     }
     M.buf = buf; M.sr = sr;
-    M.song = mCompose(seg, buf, sr);
-    mDraw();
-    say('노래가 다 됐어! 들어 봐.');
-    mPlaySong();
+    // 받아적기(가사)가 도착하기를 잠깐 기다렸다가 노래를 만든다
+    mSet('cook');
+    let made = false;
+    const build = () => {
+      if (made || M.state !== 'cook') return; // 기다리는 사이 화면을 나갔으면 그만둔다
+      made = true;
+      M.song = mCompose(seg, buf, sr, (M.text || '').trim());
+      mDraw();
+      say('노래가 다 됐어! 들어 봐.');
+      mPlaySong();
+    };
+    if (r) {
+      try { r.onend = build; r.stop(); } catch (err) { build(); }
+      setTimeout(build, 1500); // 받아적기가 소식이 없으면 가사 없이 만든다
+    } else build();
   }
   // 소리 크기로 음절을 찾는다: 조용한 틈으로 자르고, 너무 짧으면 버리고, 너무 길면 나눈다.
   function mSyllables(buf, sr) {
@@ -2870,7 +2932,10 @@ body { margin: 0; overscroll-behavior: none; }
       for (let j = i * hop; j < (i + 1) * hop; j++) s += buf[j] * buf[j];
       e.push(Math.sqrt(s / hop));
     }
-    const th = Math.max(0.015, Math.max(0, ...e) * 0.2);
+    for (let i = 0; i < 5 && i < n; i++) e[i] = 0; // 단추 누르는 소리(맨 앞 0.1초)는 버린다
+    // 기준은 방의 바닥 소음과 가장 큰 소리 둘 다 보고 잡는다 (조용한 방에서도, 시끄러운 방에서도)
+    const sorted = [...e].sort((a, b) => a - b);
+    const th = Math.max(0.015, (sorted[Math.floor(n * 0.2)] || 0) * 2.5, (sorted[n - 1] || 0) * 0.15);
     const runs = [];
     let s0 = -1;
     for (let i = 0; i <= n; i++) {
@@ -2891,107 +2956,254 @@ body { margin: 0; overscroll-behavior: none; }
     }
     return seg.slice(0, 14).map(([a, b]) => ({ at: a * hop, len: (b - a) * hop }));
   }
-  // 음절의 원래 음 높이: 자기 상관으로 대강 찾는다 (80~480Hz). 못 찾으면 아이 목소리쯤으로 친다.
+  // 음절의 원래 음 높이: 자기 상관으로 찾는다 (80~480Hz). 못 찾으면 아이 목소리쯤으로 친다.
   function mPitch(buf, sr, at, len) {
     const N = Math.min(2048, len), o = at + ((len - N) >> 1);
     const lo = Math.round(sr / 480), hi = Math.min(Math.round(sr / 80), N - 1);
-    let best = 0, bl = 0;
+    let e0 = 0;
+    for (let i = 0; i < N; i++) e0 += buf[o + i] * buf[o + i];
+    if (!e0) return 240;
+    const vals = [];
+    let mx = -Infinity;
     for (let lag = lo; lag <= hi; lag++) {
       let s = 0;
       for (let i = 0; i + lag < N; i += 2) s += buf[o + i] * buf[o + i + lag];
-      if (s > best) { best = s; bl = lag; }
+      s /= N - lag; // 긴 간격이 손해 보지 않게 평균으로 견준다
+      vals.push(s);
+      if (s > mx) mx = s;
     }
-    return bl ? sr / bl : 240;
+    if (mx <= 0) return 240;
+    // 두 배 주기(한 옥타브 아래)로 틀리지 않게, 가장 센 봉우리의 9할이 넘는 가장 빠른 주기를 고른다
+    for (let lag = lo; lag <= hi; lag++) if (vals[lag - lo] >= mx * 0.9) return sr / lag;
+    return 240;
   }
-  // 음절마다 가락 틀에서 음을 하나씩 받고, 말한 길이대로 박자를 준다
-  function mCompose(seg, buf, sr) {
-    const tune = pick(TUNES), eighth = 30 / 104; // 104 bpm의 반 박
-    let t = 0;
+  // 받아적은 글자 수에 음절 수를 맞춘다: 모자라면 긴 음절을 반으로 쪼개고, 남으면 바짝 붙은 이웃을 합친다.
+  // 그래야 글자 하나에 음 하나가 붙어서 가사와 노래가 꼭 맞는다.
+  function mFit(seg, m, sr) {
+    seg = seg.map(s => ({ at: s.at, len: s.len }));
+    let guard = 30;
+    while (seg.length < m && guard-- > 0) {
+      let i = 0;
+      seg.forEach((s, j) => { if (s.len > seg[i].len) i = j; });
+      if (seg[i].len < sr * 0.22) break; // 더 쪼개면 소리가 너무 뚝뚝 끊긴다
+      const half = Math.floor(seg[i].len / 2);
+      seg.splice(i, 1, { at: seg[i].at, len: half }, { at: seg[i].at + half, len: seg[i].len - half });
+    }
+    while (seg.length > m && m > 0 && guard-- > 0) {
+      let i = 0, best = Infinity;
+      for (let j = 0; j + 1 < seg.length; j++) {
+        const gap = seg[j + 1].at - (seg[j].at + seg[j].len);
+        if (gap < best) { best = gap; i = j; }
+      }
+      const a = seg[i], b = seg[i + 1];
+      seg.splice(i, 2, { at: a.at, len: b.at + b.len - a.at });
+    }
+    return seg;
+  }
+  // 작곡: 말의 느낌을 읽어 빠르기와 화음 진행을 고르고, 마디 화음에 어울리는 음을
+  // 산 모양(올라갔다 내려오는)으로 고른다. 받아적은 말은 가사가 되고,
+  // 마지막 낱말을 "좋아! 좋아!"처럼 두 번 더 불러서 노래답게 끝맺는다.
+  function mCompose(seg, buf, sr, text) {
+    const mood = MOODS[mMood(text)];
+    const eighth = 30 / mood.bpm; // 반 박
+    const scale = mood.scale, barE = mood.feel === 'waltz' ? 6 : 8; // 한 마디의 반 박 수 (왈츠는 3박)
+    const words = (text || '').replace(/[^가-힣0-9A-Za-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+    const charWord = []; // 몇 번째 글자가 몇 번째 낱말인지
+    words.forEach((wd, wi) => { for (const c of wd) charWord.push(wi); });
+    if (charWord.length) seg = mFit(seg, Math.min(charWord.length, 18), sr); // 글자 하나에 음 하나
+    const n = seg.length;
+    const wordOf = i => charWord.length ? charWord[Math.min(charWord.length - 1, Math.floor(i * charWord.length / n))] : -1;
+    seg.forEach(sg => { sg.from = Math.min(500, Math.max(100, mPitch(buf, sr, sg.at, sg.len))); });
+    const freqOf = k => 261.63 * Math.pow(2, scale[k] / 12);
+    const chordAt = e => CHORDS[mood.prog[Math.floor(e / barE) % mood.prog.length]];
+    let t = 0, e = 0, p = 0; // e: 지금까지 흐른 반 박 수, p: 바로 앞 음
     const notes = seg.map((sg, i) => {
-      const k = i === seg.length - 1 ? 0 : tune[i % tune.length]; // 마지막 음은 도라야 끝난 느낌이 난다
-      const freq = 261.63 * Math.pow(2, PENT[k] / 12);
-      const from = Math.min(500, Math.max(100, mPitch(buf, sr, sg.at, sg.len)));
-      const dur = eighth * Math.max(1, Math.min(3, Math.round(sg.len / sr / eighth)));
-      const note = { ...sg, k, t, dur, freq, rate: Math.min(2.4, Math.max(0.5, freq / from)) };
-      t += note.dur;
-      return note;
+      const steps = Math.max(1, Math.min(3, Math.round(sg.len / sr / eighth))); // 말한 길이대로 박자
+      const hill = Math.round(mood.lift * Math.sin(Math.PI * (n < 2 ? 0.5 : i / (n - 1)))); // 산 모양 목표 높이
+      const tones = chordAt(e), strong = e % barE === 0 || e % barE === barE >> 1;
+      let k = p, score = -Infinity; // 앞 음에서 두 칸 안에서, 목표에 가깝고 화음에 맞는 음을 고른다
+      for (let c = Math.max(0, p - 2); c <= Math.min(5, p + 2); c++) {
+        let v = -Math.abs(c - hill) * 1.4 - (c === p ? 0.5 : 0) + Math.random() * 1.1;
+        if (strong && !tones.some(s => s % 12 === scale[c] % 12)) v -= 2; // 센박은 화음 음으로
+        if (v > score) { score = v; k = c; }
+      }
+      const m = { ...sg, k, t, dur: steps * eighth, freq: freqOf(k), rate: 0, w: wordOf(i) };
+      p = k; t += m.dur; e += steps;
+      return m;
     });
-    return { notes, len: t, eighth };
+    // 끝맺음: 마지막 낱말(가사가 없으면 마지막 두 음절)을 두 번 더 부른다
+    const lastW = words.length - 1;
+    const tail = notes.filter((m, i) => (lastW >= 0 ? m.w === lastW : i >= n - 2));
+    if (n >= 2 && tail.length >= 1 && tail.length <= 4) {
+      [3, 4].forEach((deg, r) => {
+        t += eighth; // 숨 쉴 틈
+        tail.forEach((m0, j) => {
+          const k = r === 1 && j === tail.length - 1 ? 0 : deg; // 맨 끝은 도로 내려와 끝난 느낌이 난다
+          notes.push({ ...m0, k, freq: freqOf(k), t });
+          t += m0.dur;
+        });
+      });
+    } else { const m0 = notes[n - 1]; m0.k = 0; m0.freq = freqOf(0); } // 되풀이가 없으면 도로 끝낸다
+    const last = notes[notes.length - 1]; // 마지막 음은 길게 끌어서 여운을 남긴다
+    t += Math.max(0, eighth * 2 - last.dur); last.dur = Math.max(last.dur, eighth * 2);
+    notes.forEach(m => { m.rate = Math.min(2.4, Math.max(0.5, m.freq / m.from)); });
+    return { notes, len: t, eighth, barE, mood, intro: eighth * 4, words, text: (text || '').trim() };
   }
   // 악보처럼: 높은 음은 위에, 긴 음은 크게. 노래가 나오는 동안 제 차례의 음표가 커진다.
+  // 받아적은 말은 아래에 가사로 적고, 부르는 낱말이 커진다.
   function mDraw() {
-    const { notes, len, eighth } = M.song;
-    const s = mk('svg', { viewBox: '0 0 100 52', 'aria-hidden': 'true' });
-    for (let i = 0; i < 5; i++) mk('line', { x1: 4, x2: 96, y1: 12 + i * 7, y2: 12 + i * 7, class: 'mline' }, s);
+    const { notes, len, eighth, words } = M.song;
+    const sv = mk('svg', { viewBox: '0 0 100 52', 'aria-hidden': 'true' });
+    for (let i = 0; i < 5; i++) mk('line', { x1: 4, x2: 96, y1: 12 + i * 7, y2: 12 + i * 7, class: 'mline' }, sv);
     M.dots = notes.map((n, i) => mk('circle', {
       cx: 6 + (n.t + n.dur / 2) / len * 88,
       cy: 46 - n.k * 7,
       r: 2.6 + n.dur / eighth * 1.2,
-      class: 'mnote c' + (i % 7),
-    }, s));
-    mStage.replaceChildren(s);
+      class: 'mnote c' + (n.w >= 0 ? n.w % 7 : i % 7), // 같은 낱말은 같은 색
+    }, sv));
+    M.chars = words.map((wd, wi) => {
+      const sp = el('span', 'mly', wd);
+      sp.style.setProperty('--wc', `var(--p${wi % 7})`); // 가사 색도 제 음표와 맞춘다
+      return sp;
+    });
+    mStage.replaceChildren(sv);
+    if (M.chars.length) {
+      const line = el('div', 'mlyrics');
+      M.chars.forEach(sp => line.appendChild(sp));
+      mStage.appendChild(line);
+    }
+  }
+  // 노래를 소리로 깐다. ctx가 스피커든(실시간) 녹음기든(파일 저장) 똑같은 소리가 난다.
+  function mSchedule(ctx, out, t0, song) {
+    const nodes = [], { notes, len, eighth, barE, mood, intro } = song;
+    const osc = (type, freq, at, dur, peak, attack) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.exponentialRampToValueAtTime(peak, at + (attack || 0.02));
+      g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+      o.connect(g).connect(out); o.start(at); o.stop(at + dur + 0.05);
+      nodes.push(o);
+    };
+    // 예비박: 똑, 똑 (노래가 곧 시작된다)
+    osc('square', 1660, t0, 0.06, 0.04);
+    osc('square', 1660, t0 + eighth * 2, 0.06, 0.04);
+    const m0 = t0 + intro;
+    // 아이 목소리: 음절마다 그 음 높이로 튼다
+    const wav = ctx.createBuffer(1, M.buf.length, M.sr);
+    wav.getChannelData(0).set(M.buf);
+    notes.forEach(nn => {
+      const s = ctx.createBufferSource(), e = ctx.createGain(), at = m0 + nn.t;
+      s.buffer = wav; s.playbackRate.value = nn.rate;
+      e.gain.setValueAtTime(0.0001, at);
+      e.gain.exponentialRampToValueAtTime(1, at + 0.02);
+      e.gain.setValueAtTime(1, at + Math.max(0.03, nn.dur - 0.08));
+      e.gain.exponentialRampToValueAtTime(0.0001, at + nn.dur);
+      s.connect(e).connect(out);
+      s.start(at, nn.at / M.sr, Math.min(nn.len / M.sr, (nn.dur + 0.05) * nn.rate));
+      nodes.push(s);
+      osc('triangle', nn.freq, at, nn.dur + 0.05, 0.07, 0.03); // 같은 음을 밑에 깔아 가락을 또렷하게
+    });
+    // 반주: 느낌마다 다르게 친다 (bounce 통통 / march 쿵쿵 / waltz 쿵짝짝 / soft 또르르)
+    const ok = at => at < m0 + len - 0.01; // 노래가 끝난 뒤에는 치지 않는다
+    const bars = Math.ceil(len / (barE * eighth));
+    for (let b = 0; b < bars; b++) {
+      const name = mood.prog[b % mood.prog.length], root = ROOTS[name], tones = CHORDS[name];
+      const bt = m0 + b * barE * eighth;
+      const chord = (at, dur, peak, type) => { if (ok(at)) tones.forEach(sm => osc(type || 'triangle', 261.63 * Math.pow(2, sm / 12) / 2, at, dur, peak, 0.01)); };
+      if (mood.feel === 'waltz') { // 쿵 짝 짝
+        if (ok(bt)) osc('sine', root, bt, eighth * 2.4, 0.14, 0.03);
+        chord(bt + eighth * 2, eighth * 1.6, 0.035, 'sine');
+        chord(bt + eighth * 4, eighth * 1.6, 0.035, 'sine');
+      } else if (mood.feel === 'soft') { // 낮은 음 위에 화음을 또르르 펼친다
+        if (ok(bt)) osc('sine', root, bt, eighth * 5, 0.11, 0.05);
+        tones.forEach((sm, j) => { const at = bt + (j + 1) * eighth * 2; if (ok(at)) osc('sine', 261.63 * Math.pow(2, sm / 12) / 2, at, eighth * 2.4, 0.05, 0.08); });
+      } else { // bounce·march: 쿵(뿌리)–짝(화음)
+        const hard = mood.feel === 'march';
+        [0, 4].forEach(ei => { const at = bt + ei * eighth; if (ok(at)) osc(hard ? 'triangle' : 'sine', ei ? root * 1.5 : root, at, eighth * 1.6, hard ? 0.16 : 0.13); });
+        [2, 6].forEach(ei => chord(bt + ei * eighth, eighth * 1.2, hard ? 0.05 : 0.04));
+        if (!hard) [1, 3, 5, 7].forEach(ei => { const at = bt + ei * eighth; if (ok(at)) osc('square', 3320, at, 0.03, 0.012); }); // 찰랑이는 셰이커
+      }
+    }
+    // 마침: 첫 화음을 또르르 굴려서 반짝 끝낸다
+    const endT = CHORDS[mood.prog[0]], endAt = m0 + len + 0.1;
+    endT.concat([endT[0] + 12]).forEach((sm, j) => osc('triangle', 261.63 * Math.pow(2, sm / 12), endAt + j * 0.07, 0.5, 0.08, 0.01));
+    return nodes;
   }
   function mPlaySong() {
     if (!M.song || !ac) return;
     mNodesStop(); wake();
     const g = M.gen, out = ac.createGain();
     out.connect(ac.destination); M.out = out;
-    const t0 = ac.currentTime + 0.2, { notes, len, eighth } = M.song, sr = M.sr;
-    const wav = ac.createBuffer(1, M.buf.length, sr);
-    wav.getChannelData(0).set(M.buf);
-    notes.forEach(n => {
-      // 아이 목소리 음절을 그 음 높이로 틀고
-      const s = ac.createBufferSource(), e = ac.createGain();
-      s.buffer = wav; s.playbackRate.value = n.rate;
-      e.gain.setValueAtTime(0.0001, t0 + n.t);
-      e.gain.exponentialRampToValueAtTime(1, t0 + n.t + 0.02);
-      e.gain.setValueAtTime(1, t0 + n.t + Math.max(0.03, n.dur - 0.06));
-      e.gain.exponentialRampToValueAtTime(0.0001, t0 + n.t + n.dur);
-      s.connect(e).connect(out);
-      s.start(t0 + n.t, n.at / sr, Math.min(n.len / sr, (n.dur + 0.05) * n.rate));
-      M.nodes.push(s);
-      // 같은 음을 밑에 살짝 깔아서 가락이 또렷하게 들리게 한다
-      const o = ac.createOscillator(), og = ac.createGain();
-      o.type = 'triangle'; o.frequency.value = n.freq;
-      og.gain.setValueAtTime(0.0001, t0 + n.t);
-      og.gain.exponentialRampToValueAtTime(0.07, t0 + n.t + 0.03);
-      og.gain.exponentialRampToValueAtTime(0.0001, t0 + n.t + n.dur);
-      o.connect(og).connect(out);
-      o.start(t0 + n.t); o.stop(t0 + n.t + n.dur + 0.05);
-      M.nodes.push(o);
-    });
-    // 반주: 박마다 낮은 음이 쿵쿵 받쳐 준다
-    const BASS = [130.81, 98, 110, 98];
-    for (let b = 0, tb = 0; tb < len - 0.01; b++, tb += eighth * 2) {
-      const o = ac.createOscillator(), og = ac.createGain(), at = t0 + tb;
-      o.type = 'sine'; o.frequency.value = BASS[b % 4];
-      og.gain.setValueAtTime(0.0001, at);
-      og.gain.exponentialRampToValueAtTime(0.12, at + 0.02);
-      og.gain.exponentialRampToValueAtTime(0.0001, at + eighth * 1.6);
-      o.connect(og).connect(out);
-      o.start(at); o.stop(at + eighth * 2);
-      M.nodes.push(o);
-    }
+    const t0 = ac.currentTime + 0.1;
+    M.nodes = mSchedule(ac, out, t0, M.song);
     mSet('play');
-    const doneAt = t0 + len + 0.25;
+    const { notes, len, intro } = M.song;
+    const doneAt = t0 + intro + len + 0.8;
     M.timer = setInterval(() => {
       if (g !== M.gen) { clearInterval(M.timer); return; }
-      const now = ac.currentTime - t0;
+      const now = ac.currentTime - t0 - intro;
       notes.forEach((n, i) => { const c = M.dots[i]; if (c) c.classList.toggle('on', now >= n.t && now < n.t + n.dur); });
+      const cur = notes.find(n => now >= n.t && now < n.t + n.dur); // 부르는 낱말 가사도 함께 커진다
+      M.chars.forEach((sp, wi) => sp.classList.toggle('on', !!cur && cur.w === wi));
       if (ac.currentTime > doneAt) {
         clearInterval(M.timer); M.timer = 0;
         mSet('made');
         const word = pick(['우와, 멋진 노래야!', '랄랄라, 노래 완성!', '네 목소리가 노래가 됐어!']);
-        feedback(true, word, '', 1400);
+        feedback(true, word, M.song.text, 1800);
         say(word);
       }
     }, 40);
+  }
+  // 노래를 소리 파일(.wav)로 만들어서 내려받는다
+  let saving = false;
+  async function mSave() {
+    if (!M.song || saving) return;
+    saving = true;
+    try {
+      const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      const rate = 44100, total = M.song.intro + M.song.len + 1;
+      const ctx = new OAC(1, Math.ceil(total * rate), rate);
+      mSchedule(ctx, ctx.destination, 0.05, M.song);
+      const buf = await ctx.startRendering();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(mWav(buf));
+      a.download = '꼼지노래.wav';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      feedback(true, '노래를 저장했어!', '', 1400);
+    } catch (err) {
+      feedback(false, '저장이 안 됐어', '이 기기에서는 저장이 어려운가 봐.');
+    }
+    saving = false;
+  }
+  // 소리 버퍼를 wav 파일로 바꾼다 (16비트 모노)
+  function mWav(buf) {
+    const ch = buf.getChannelData(0), n = ch.length;
+    const b = new DataView(new ArrayBuffer(44 + n * 2));
+    const w = (o, s) => { for (let i = 0; i < s.length; i++) b.setUint8(o + i, s.charCodeAt(i)); };
+    w(0, 'RIFF'); b.setUint32(4, 36 + n * 2, true); w(8, 'WAVEfmt ');
+    b.setUint32(16, 16, true); b.setUint16(20, 1, true); b.setUint16(22, 1, true);
+    b.setUint32(24, buf.sampleRate, true); b.setUint32(28, buf.sampleRate * 2, true);
+    b.setUint16(32, 2, true); b.setUint16(34, 16, true);
+    w(36, 'data'); b.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) b.setInt16(44 + i * 2, Math.max(-1, Math.min(1, ch[i])) * 32767, true);
+    return new Blob([b.buffer], { type: 'audio/wav' });
   }
   function mNoMic() {
     feedback(false, '마이크를 쓸 수가 없어', '마이크를 허락해 달라고 엄마에게 보여 줘.');
   }
   mRec.replaceChildren(ico('mic'));
   mPlay.replaceChildren(ico('next'));
+  $('m-save').replaceChildren(ico('down'));
+  $('m-save').addEventListener('click', () => { wake(); mSave(); });
+  // 받아적는 말 고르기: 한글로 말하면 한글, 영어로 말하면 ABC로 바꿔 두면 된다
+  const mLangShow = () => {
+    $('m-lang').textContent = mLang === 'en' ? 'ABC' : '한글';
+    $('m-lang').setAttribute('aria-label', mLang === 'en' ? '영어로 받아적기' : '한글로 받아적기');
+  };
+  mLangShow();
+  $('m-lang').addEventListener('click', () => { mLang = mLang === 'en' ? 'ko' : 'en'; save(); mLangShow(); });
   mRec.addEventListener('click', () => {
     wake();
     if (M.state !== 'rec') { mRecStart(); return; }
@@ -3053,6 +3265,7 @@ body { margin: 0; overscroll-behavior: none; }
       clock: 'M20 6 a14 14 0 1 0 0.01 0 Z M20 12 V20 H27',
       talk: 'M6 8 H34 V27 H21 L12 34 V27 H6 Z',
       mic: 'M20 5 a6 6 0 0 1 6 6 v8 a6 6 0 0 1 -12 0 v-8 a6 6 0 0 1 6 -6 Z M9 19 a11 11 0 0 0 22 0 M20 30 V36 M13 36 H27',
+      down: 'M20 5 V25 M11 17 L20 26 L29 17 M8 33 H32',
     }[name];
     mk('path', { d }, s);
     return s;
