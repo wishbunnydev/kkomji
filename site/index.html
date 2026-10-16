@@ -652,7 +652,10 @@ button.day { cursor: pointer; }
 #cl-themes .cth { flex: none; display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 2.5px solid #F2E3B8; border-radius: 22px; background: #fff; font: inherit; font-weight: 700; font-size: 1.05rem; color: #4A4A4A; cursor: pointer; }
 #cl-themes .cth .ce { font-size: 1.3rem; }
 #cl-themes .cth[aria-pressed="true"] { background: #F7C948; border-color: #E3AC2E; }
-#cl-grid { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; align-content: start; padding: 2px; }
+#cl-grid { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 2px; }
+.cl-sech { margin: 8px 2px 2px; font-weight: 800; font-size: 1.15rem; color: #4A4A4A; }
+.cl-sech small { font-weight: 700; color: #9b8f78; font-size: .85rem; margin-left: 6px; }
+.cl-secgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 #cl-grid .cpic { border: 2.5px solid #F2E3B8; border-radius: 16px; background: #fff; padding: 6px 6px 8px; font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 3px; text-align: left; }
 #cl-grid .cpic img { width: 100%; aspect-ratio: 43 / 24; object-fit: cover; border-radius: 10px; background: #fff; }
 #cl-grid .cpic b { font-size: .95rem; color: #4A4A4A; }
@@ -685,7 +688,7 @@ button.day { cursor: pointer; }
   .cl-btn { width: 40px; height: 40px; border-radius: 13px; }
   .cl-btn.big { width: 52px; height: 52px; border-radius: 16px; }
   #cl-board { padding: 9px; border-radius: 18px; }
-  #cl-grid { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); }
+  .cl-secgrid { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); }
   #cl-themes .cth { min-height: 38px; padding: 0 10px; font-size: .95rem; }
 }
 </style>
@@ -3463,16 +3466,42 @@ body { margin: 0; overscroll-behavior: none; }
   }
   // 꼼지 차례. start가 있으면 그 글자로 잇고, 이을 말이 없으면 새 기차를 출발한다.
   // 매너 규칙: 아이가 받을 수 있는 낱말(카드 모드면 그림 낱말)이 남아 있는 것만 말한다.
+  // 이 낱말 뒤로 몇 수나 이어질 수 있는지 내다본다. kidNext가 참이면 다음 수는 아이 차례(카드 모드면 그림 낱말이어야 한다).
+  // 한 수 앞만 보면 막다른 낱말(미끄럼틀처럼 뒤가 없는 말)이 자꾸 뽑혀서 기차가 금방 끊긴다.
+  function wDepth(word, kidNext, limit, seen) {
+    if (!limit) return 0;
+    let best = 0;
+    for (const x of WORDS) {
+      if (WG.used.has(x.w) || seen.has(x.w) || x.w[0] !== wLast(word)) continue;
+      if (kidNext && WG.mode === 'card' && !x.e) continue;
+      seen.add(x.w);
+      const d = 1 + wDepth(x.w, !kidNext, limit - 1, seen);
+      seen.delete(x.w);
+      if (d > best) best = d;
+      if (best >= limit) break;
+    }
+    return best;
+  }
+  // 되도록 멀리까지 이어지는 낱말을 고른다 (want수 앞 → 안 되면 한 수씩 줄여서)
+  function wPickDeep(cands, kidNext, want) {
+    for (let d = want; d >= 1; d--) {
+      const good = cands.filter(x => wDepth(x.w, kidNext, d, new Set([x.w])) >= d);
+      if (good.length) return pick(good);
+    }
+    return pick(cands);
+  }
   function wTurn(start) {
     WG.miss = 0; WG.busy = false;
-    const alive = x => wPool(wLast(x.w), WG.mode === 'card').some(y => y.w !== x.w);
-    let k = pick(wPool(start, false).filter(alive));
-    if (!k && start) {
+    // 매너 규칙: 아이가 받을 수 있는 낱말만 (카드 모드면 그림 낱말이 하나는 남아 있어야 한다)
+    const usable = s => wPool(s, false).filter(x => wDepth(x.w, true, 1, new Set([x.w])) >= 1);
+    let cand = usable(start);
+    if (!cand.length && start) {
       feedback('tip', '우와, 어려운 말이야!', '새 기차를 출발할게.');
       wSay('우와, 어려운 말이야! 새 기차 출발!');
     }
-    if (!k) k = pick(wPool(null, false).filter(alive));
-    if (!k) { WG.used.clear(); k = pick(WORDS.filter(x => x.e)); } // 사전을 다 썼다 (사실상 없는 일)
+    if (!cand.length) cand = usable(null);
+    if (!cand.length) { WG.used.clear(); cand = usable(null); } // 사전을 다 썼다: 처음부터 다시 쓴다
+    const k = wPickDeep(cand, true, 4);
     WG.used.add(k.w); WG.kw = k.w; WG.need = wLast(k.w);
     wRow('kkom', k.w, true);
     wSpeakTurn();
@@ -3512,7 +3541,7 @@ body { margin: 0; overscroll-behavior: none; }
   function wCards() {
     const row = $('wbottom'); row.replaceChildren();
     const okPool = wPool(WG.need, true);
-    const ok = pick(okPool.filter(y => wPool(wLast(y.w), false).some(z => z.w !== y.w))) || pick(okPool);
+    const ok = wPickDeep(okPool, false, 3); // 정답 카드도 뒤가 이어지는 낱말을 고른다
     const wrong = shuffle(WORDS.filter(x => x.e && x.w !== ok.w && x.w[0] !== WG.need && !WG.used.has(x.w))).slice(0, 2);
     shuffle([ok, ...wrong]).forEach(c => {
       const b = el('button', 'wcard'); b.type = 'button';
@@ -4088,25 +4117,42 @@ body { margin: 0; overscroll-behavior: none; }
   }
   function clPicker(theme) {
     CL.theme = theme;
+    // 위쪽 테마 단추: 누르면 그 테마 섹션으로 데려다준다
     const th = $('cl-themes'); th.replaceChildren();
     CL_THEMES.forEach(([k, ko, en, emo]) => {
       const b = el('button', 'cth'); b.type = 'button';
       b.setAttribute('aria-pressed', String(k === theme));
       b.append(el('span', 'ce', emo), document.createTextNode(ko));
-      b.addEventListener('click', () => { wake(); clPicker(k); });
+      b.addEventListener('click', () => {
+        wake(); CL.theme = k;
+        th.querySelectorAll('.cth').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+        const sec = $('cl-sec-' + k);
+        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
       th.appendChild(b);
     });
+    // 테마별 섹션: 제목 아래에 그 테마의 도안들이 나뉘어 보인다
     const g = $('cl-grid'); g.replaceChildren();
-    CL_PICS[theme].forEach(([ko, en], i) => {
-      const b = el('button', 'cpic'); b.type = 'button';
-      const im = new Image();
-      im.loading = 'lazy'; im.alt = '';
-      im.src = 'coloring/' + theme + '/' + String(i + 1).padStart(2, '0') + '.png';
-      b.append(im, el('b', '', ko), el('small', '', en));
-      b.addEventListener('click', () => { wake(); clOpenPic(theme, i); });
-      g.appendChild(b);
+    CL_THEMES.forEach(([k, ko, en, emo]) => {
+      const h = el('h2', 'cl-sech', emo + ' ' + ko);
+      h.id = 'cl-sec-' + k;
+      h.appendChild(el('small', '', en));
+      g.appendChild(h);
+      const grid = el('div', 'cl-secgrid');
+      CL_PICS[k].forEach(([pko, pen], i) => {
+        const b = el('button', 'cpic'); b.type = 'button';
+        const im = new Image();
+        im.loading = 'lazy'; im.alt = '';
+        im.src = 'coloring/' + k + '/' + String(i + 1).padStart(2, '0') + '.png';
+        b.append(im, el('b', '', pko), el('small', '', pen));
+        b.addEventListener('click', () => { wake(); clOpenPic(k, i); });
+        grid.appendChild(b);
+      });
+      g.appendChild(grid);
     });
-    g.scrollTop = 0;
+    const cur = $('cl-sec-' + theme);
+    if (cur && theme !== CL_THEMES[0][0]) cur.scrollIntoView({ block: 'start' });
+    else g.scrollTop = 0;
   }
   function openColoring() {
     show('coloring', true);
