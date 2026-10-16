@@ -472,9 +472,18 @@ button.day { cursor: pointer; }
 .mstage { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 100%; flex: 1; min-height: 0; }
 .mstage svg { width: min(100%, 620px); flex: 0 1 auto; min-height: 0; max-height: 300px; height: auto; }
 /* 받아적은 말은 가사로 보여 주고, 노래에 맞춰 부르는 낱말이 커진다 */
-.mlyrics { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; font-size: 1.7rem; line-height: 1.25; word-break: keep-all; text-align: center; }
-.mly { color: var(--wc, inherit); transition: transform .12s; }
-.mly.on { transform: scale(1.25); color: var(--pop); }
+.mstage svg.msheet { width: min(100%, 760px); max-height: 340px; }
+.mbar { stroke: var(--ink); stroke-width: .8; }
+.mbar.end { stroke-width: 2.4; }
+.mstem { stroke: var(--ink); stroke-width: 1.2; }
+.mbeam { stroke: var(--ink); stroke-width: 3.4; }
+.mflag { stroke: var(--ink); stroke-width: 1.4; fill: none; }
+.mdot { fill: var(--ink); }
+.msn { transition: transform .12s; transform-box: fill-box; transform-origin: center; }
+.msn.on { transform: scale(1.35); }
+.msl { fill: var(--ink); font-size: 12px; font-weight: 800; text-anchor: middle; transition: fill .1s; }
+.msl.on { fill: var(--pop); font-size: 15px; }
+.mvoice { font-size: 1.7rem; line-height: 1; }
 .mstage .gi { width: min(150px, 34%); height: auto; aspect-ratio: 1; opacity: .35; }
 .mstage .gi .ln { stroke: var(--ink); } /* 어두운 화면에서도 음표 기둥이 보이게 */
 .mline { stroke: var(--line); stroke-width: .5; }
@@ -811,6 +820,7 @@ body { margin: 0; overscroll-behavior: none; }
   <div class="mbtns">
     <button class="mic" id="m-rec" type="button" aria-label="말하기"></button>
     <button class="mplay" id="m-play" type="button" aria-label="노래 다시 듣기" hidden></button>
+    <button class="msave mvoice" id="m-voice" type="button" hidden></button>
     <button class="msave" id="m-save" type="button" aria-label="노래 저장하기" hidden></button>
   </div>
 </div>
@@ -2931,18 +2941,14 @@ body { margin: 0; overscroll-behavior: none; }
   $('qagain').addEventListener('click', () => { quiz.n = 0; ask(); });
 
   // ================= 랄랄라: 내 말이 노래가 돼 =================
-  // 아이가 한 말을 음절로 자르고, 음절마다 음 높이를 바꿔 아이 목소리 그대로 노래처럼 들려 준다.
-  // 화음(도에서 몇 반음 위인지)과 그 뿌리 저음. 마디마다 하나씩 짚는다.
-  const CHORDS = { C: [0, 4, 7], F: [5, 9, 12], G: [7, 11, 14], Am: [9, 12, 16], Cm: [0, 3, 7], Ab: [8, 12, 15], Bb: [10, 14, 17] };
-  const ROOTS = { C: 130.81, F: 87.31, G: 98, Am: 110, Cm: 130.81, Ab: 103.83, Bb: 116.54 };
-  // 작곡 스타일: 아이 말의 느낌에 따라 빠르기, 음계(장조/단조), 화음 진행, 반주 느낌이 달라진다.
-  // lift는 가락이 올라가는 높이(산 모양의 봉우리)다.
+  // 아이가 한 말을 가사로 받아 동요 가락을 붙이고, 악보와 함께 꼼지 악기나 아이 목소리로 불러 준다.
+  // 작곡 스타일: 아이 말의 느낌에 따라 빠르기와 반주 느낌이 달라진다 (화음 진행은 MPROG).
   const MOODS = {
-    neat:   { name: '밝은',   bpm: 108, scale: [0, 2, 4, 7, 9, 12],  prog: ['C', 'F', 'G', 'C'],    feel: 'bounce', lift: 3 },
-    happy:  { name: '신나는', bpm: 126, scale: [0, 2, 4, 7, 9, 12],  prog: ['C', 'Am', 'F', 'G'],   feel: 'bounce', lift: 4 },
-    brave:  { name: '씩씩한', bpm: 112, scale: [0, 2, 4, 7, 9, 12],  prog: ['C', 'C', 'F', 'G'],    feel: 'march',  lift: 3 },
-    sad:    { name: '슬픈',   bpm: 84,  scale: [0, 3, 5, 7, 10, 12], prog: ['Cm', 'Ab', 'Bb', 'Cm'], feel: 'soft',   lift: 2 },
-    sleepy: { name: '포근한', bpm: 76,  scale: [0, 2, 4, 7, 9, 12],  prog: ['C', 'Am', 'F', 'G'],   feel: 'waltz',  lift: 2 },
+    neat:   { name: '밝은',   bpm: 108, feel: 'bounce' },
+    happy:  { name: '신나는', bpm: 120, feel: 'bounce' },
+    brave:  { name: '씩씩한', bpm: 112, feel: 'march' },
+    sad:    { name: '슬픈',   bpm: 84,  feel: 'soft' },
+    sleepy: { name: '포근한', bpm: 76,  feel: 'waltz' },
   };
   const MOODWORDS = [
     ['sad', /슬퍼|슬프|싫어|아파|아야|울어|울었|눈물|무서|화나|힘들|sad|cry|scar|hurt|angry/i],
@@ -2954,7 +2960,7 @@ body { margin: 0; overscroll-behavior: none; }
     for (const [k, re] of MOODWORDS) if (re.test(text || '')) return k;
     return text ? 'neat' : pick(['neat', 'happy']); // 받아적은 말이 없으면 밝거나 신나게
   }
-  const M = { state: 'idle', gen: 0, buf: null, sr: 0, song: null, dots: [], chars: [], nodes: [], out: null, timer: 0, mic: null, recData: null, srec: null, text: '' };
+  const M = { state: 'idle', gen: 0, buf: null, sr: 0, song: null, dots: [], chars: [], nodes: [], out: null, timer: 0, mic: null, recData: null, srec: null, text: '', voice: 'inst' };
   const mRec = $('m-rec'), mPlay = $('m-play'), mStage = $('mstage'), mHint = $('mhint');
   const MWORDS = {
     idle: '단추를 누르고 아무 말이나 해 봐. 꼼지가 노래로 만들어 줄게!',
@@ -2969,8 +2975,11 @@ body { margin: 0; overscroll-behavior: none; }
     mRec.setAttribute('aria-label', state === 'rec' ? '그만 말하기' : '말하기');
     mPlay.hidden = !M.song || state === 'rec';
     $('m-save').hidden = mPlay.hidden;
+    $('m-voice').hidden = mPlay.hidden;
     // 노래가 다 되면 어떤 느낌의 노래인지 알려 준다
-    mHint.textContent = state === 'made' && M.song ? M.song.mood.name + ' 노래가 됐어! 노란 단추로 다시 들어 봐.' : MWORDS[state];
+    mHint.textContent = state === 'made' && M.song
+      ? M.song.mood.name + ' 노래가 됐어! ' + (M.voice === 'mine' ? '🎹를 누르면 꼼지 악기로 불러 줘.' : '🎤를 누르면 내 목소리로 불러 줘.')
+      : MWORDS[state];
   }
   function mNodesStop() { // 울리고 있는 노래를 멈춘다
     clearInterval(M.timer); M.timer = 0;
@@ -3115,7 +3124,7 @@ body { margin: 0; overscroll-behavior: none; }
       while (b - x > 24) { seg.push([x, x + 16]); x += 16; } // 길게 끈 소리는 0.32초씩 나눈다
       seg.push([x, b]);
     }
-    return seg.slice(0, 14).map(([a, b]) => ({ at: a * hop, len: (b - a) * hop }));
+    return seg.slice(0, 32).map(([a, b]) => ({ at: a * hop, len: (b - a) * hop }));
   }
   // 음절의 원래 음 높이: 자기 상관으로 찾는다 (80~480Hz). 못 찾으면 아이 목소리쯤으로 친다.
   function mPitch(buf, sr, at, len) {
@@ -3138,80 +3147,116 @@ body { margin: 0; overscroll-behavior: none; }
     for (let lag = lo; lag <= hi; lag++) if (vals[lag - lo] >= mx * 0.9) return sr / lag;
     return 240;
   }
-  // 작곡: 아이가 말한 리듬과 높낮이를 그대로 살린다. 음 높이만 살짝(3반음 반 안에서)
-  // 음계에 맞춰 주고, 노래 느낌은 반주가 만든다. 많이 바꾸면 무슨 말인지 알아들을 수 없다.
-  // 받아적은 말은 가사가 되고, 마지막 낱말을 "좋아! 좋아!"처럼 두 번 더 불러서 끝맺는다.
-  function mCompose(seg, buf, sr, text) {
-    const mood = MOODS[mMood(text)];
-    const eighth = 30 / mood.bpm; // 반 박
-    const scale = mood.scale, barE = mood.feel === 'waltz' ? 6 : 8; // 한 마디의 반 박 수 (왈츠는 3박)
-    const words = (text || '').replace(/[^가-힣0-9A-Za-z\s]/g, ' ').split(/\s+/).filter(Boolean);
-    const charWord = []; // 몇 번째 글자가 몇 번째 낱말인지
-    words.forEach((wd, wi) => { for (const c of wd) charWord.push(wi); });
-    const n = seg.length;
-    const wordOf = i => charWord.length ? charWord[Math.min(charWord.length - 1, Math.floor(i * charWord.length / n))] : -1;
-    const tones = []; // 음계를 아래위 옥타브까지 펼쳐 둔다
-    for (let oct = -12; oct <= 24; oct += 12) scale.forEach(sm => tones.push(sm + oct));
-    // s(반음 수)에서 3.5반음 안에 있는 가장 가까운 음계 음. 센박은 화음 음을 조금 더 좋아한다.
-    const near = (s, chord) => {
-      let best = null, bd = Infinity;
-      for (const c of tones) {
-        if (Math.abs(c - s) > 3.5) continue;
-        const hit = chord && chord.some(pm => ((c - pm) % 12 + 12) % 12 === 0);
-        const d = Math.abs(c - s) - (hit ? 0.8 : 0);
-        if (d < bd) { bd = d; best = c; }
-      }
-      return best === null ? s : best; // 맞출 음이 없으면 아이 음 그대로
-    };
-    const chordAt = e8 => CHORDS[mood.prog[Math.floor(e8 / barE) % mood.prog.length]];
-    const t0s = seg[0].at;
-    const mkNote = (sg, t, w, lift) => {
-      const from = Math.min(500, Math.max(100, mPitch(buf, sr, sg.at, sg.len)));
-      const s = 12 * Math.log2(from / 261.63) + (lift || 0);
-      const e8 = Math.round(t / eighth), strong = e8 % barE === 0 || e8 % barE === barE >> 1;
-      const tgt = near(s, strong ? chordAt(e8) : null);
-      const rate = Math.min(1.26, Math.max(0.8, Math.pow(2, (tgt - (s - (lift || 0))) / 12)));
-      return { ...sg, from, tgt, t, dur: sg.len / sr / rate, rate, freq: 261.63 * Math.pow(2, tgt / 12), w };
-    };
-    // 아이가 말한 그 시각 그대로 음을 놓는다 (당기면 앞뒤 음절이 겹친다)
-    const notes = seg.map((sg, i) => mkNote(sg, (sg.at - t0s) / sr, wordOf(i), 0));
-    let len = Math.max(...notes.map(m => m.t + m.dur));
-    // 끝맺음: 한 박 쉬고 마지막 낱말(가사가 없으면 마지막 음절)을 메아리처럼 한 번 더 부른다.
-    // 통째로 제 음 그대로 틀기 때문에 말이 또렷하게 들린다.
-    const lastW = words.length - 1;
-    const ti = lastW >= 0 ? notes.findIndex(m => m.w === lastW) : n - 1;
-    const chunk = { at: seg[ti].at, len: seg[n - 1].at + seg[n - 1].len - seg[ti].at };
-    if (n >= 2 && chunk.len / sr <= 1.6) {
-      const t = Math.ceil((len + eighth * 2) / eighth) * eighth; // 한 박 쉬고 다음 박 머리에서
-      const m = mkNote(chunk, t, lastW >= 0 ? lastW : -1, 0);
-      notes.push(m);
-      len = t + m.dur;
-    }
-    return { notes, len: len + 0.1, eighth, barE, mood, intro: eighth * 4, words, text: (text || '').trim() };
-  }
-  // 악보처럼: 높은 음은 위에, 긴 음은 크게. 노래가 나오는 동안 제 차례의 음표가 커진다.
-  // 받아적은 말은 아래에 가사로 적고, 부르는 낱말이 커진다.
-  function mDraw() {
-    const { notes, len, eighth, words } = M.song;
-    const sv = mk('svg', { viewBox: '0 0 100 52', 'aria-hidden': 'true' });
-    for (let i = 0; i < 5; i++) mk('line', { x1: 4, x2: 96, y1: 12 + i * 7, y2: 12 + i * 7, class: 'mline' }, sv);
-    M.dots = notes.map((n, i) => mk('circle', {
-      cx: 6 + (n.t + n.dur / 2) / len * 88,
-      cy: Math.max(9, Math.min(47, 38 - n.tgt * 2)), // 높은 음일수록 위에
-      r: 2.6 + Math.min(3, n.dur / eighth) * 1.2,
-      class: 'mnote c' + (n.w >= 0 ? n.w % 7 : i % 7), // 같은 낱말은 같은 색
-    }, sv));
-    M.chars = words.map((wd, wi) => {
-      const sp = el('span', 'mly', wd);
-      sp.style.setProperty('--wc', `var(--p${wi % 7})`); // 가사 색도 제 음표와 맞춘다
-      return sp;
+  // 작곡: 받아적은 말에 한 글자마다 음표 하나씩 붙여 동요처럼 쉬운 가락을 만든다.
+  // 가락은 다섯 음(도 레 미 솔 라)만 써서 어떻게 이어도 듣기 좋고, 끝은 으뜸음으로 맺는다.
+  // 받아적은 말이 없으면 들린 음절 수만큼 "랄라"로 부른다.
+  const MKEY = {
+    C: { pcs: [0, 4, 7], bass: 48 }, F: { pcs: [5, 9, 0], bass: 41 }, G: { pcs: [7, 11, 2], bass: 43 }, Am: { pcs: [9, 0, 4], bass: 45 },
+  };
+  const MPROG = { neat: ['C', 'F', 'G', 'C'], happy: ['C', 'Am', 'F', 'G'], brave: ['C', 'C', 'F', 'G'], sad: ['Am', 'F', 'G', 'Am'], sleepy: ['C', 'Am', 'F', 'G'] };
+  const MTONES = [60, 62, 64, 67, 69, 72, 74, 76]; // 도 레 미 솔 라 도 레 미
+  const mHz = m => 440 * Math.pow(2, (m - 69) / 12);
+  // 가사를 음절로: 한글은 글자 하나가 한 음절, 영어는 모음 덩어리로 자른다
+  function mSyllText(text) {
+    const out = [];
+    (text || '').replace(/[^가-힣A-Za-z\s]/g, ' ').split(/\s+/).filter(Boolean).forEach((wd, wi) => {
+      const parts = /[가-힣]/.test(wd) ? [...wd].filter(c => /[가-힣]/.test(c))
+        : (wd.match(/[^aeiouy]*[aeiouy]+(?:[^aeiouy]*$|[^aeiouy](?=[^aeiouy]))?/gi) || [wd]);
+      parts.forEach((s, k) => out.push({ s, w: wi, end: k === parts.length - 1 }));
     });
-    mStage.replaceChildren(sv);
-    if (M.chars.length) {
-      const line = el('div', 'mlyrics');
-      M.chars.forEach(sp => line.appendChild(sp));
-      mStage.appendChild(line);
+    return out;
+  }
+  function mCompose(seg, buf, sr, text) {
+    const moodKey = mMood(text), mood = MOODS[moodKey], prog = MPROG[moodKey], minor = moodKey === 'sad';
+    const barB = mood.feel === 'waltz' ? 3 : 4, beat = 60 / mood.bpm;
+    let syl = mSyllText(text).slice(0, 32);
+    if (!syl.length) syl = seg.map((_, i) => ({ s: i % 2 ? '라' : '랄', w: i >> 1, end: i % 2 === 1 }));
+    const n = syl.length;
+    // 박자: 한 글자에 한 박. 글자가 많으면 한 낱말 안의 두 글자를 반 박씩 묶는다.
+    const beats = [];
+    for (let i = 0; i < n; i++) {
+      if (n > 10 && i + 1 < n - 1 && !syl[i].end) { beats.push(0.5, 0.5); i++; } else beats.push(1);
     }
+    // 마지막 음은 마디 끝까지 길게 끈다. 남은 박이 한 박뿐이면 앞 음을 늘려 다음 마디를 통째로 쓴다.
+    let last = beats.slice(0, -1).reduce((a, b) => a + b, 0), rem = barB - last % barB;
+    if (rem < 2 && n >= 2) { beats[n - 2] += rem; last += rem; rem = barB; }
+    beats[n - 1] = rem;
+    const starts = [];
+    let p = 0;
+    beats.forEach(b => { starts.push(p); p += b; });
+    // 가락: 한두 칸씩 오르내리고, 센박에서는 그 마디 화음의 음을 고른다
+    const pcsAt = bar => MKEY[prog[bar % prog.length]].pcs;
+    const snap = (k, pcs) => {
+      for (const d of [0, 1, -1, 2, -2]) { const j = k + d; if (j >= 0 && j < MTONES.length && pcs.includes(MTONES[j] % 12)) return j; }
+      return k;
+    };
+    const half = starts.findIndex(s => s >= barB * 2); // 앞 두 마디 가락을 뒤에서 한 번 더 부른다
+    const ks = [];
+    let k = minor ? 4 : pick([2, 3]);
+    for (let i = 0; i < n; i++) {
+      if (half > 0 && i >= half && i - half < half && i < n - 2) k = ks[i - half];
+      else if (i > 0) {
+        let step = pick([-1, -1, 1, 1, 0, 2, -2]);
+        if (k >= 6) step = -Math.abs(step) || -1;
+        if (k <= 1) step = Math.abs(step) || 1;
+        k = Math.max(0, Math.min(MTONES.length - 1, k + step));
+        const inBar = starts[i] % barB;
+        if (inBar === 0 || (barB === 4 && inBar === 2)) k = snap(k, pcsAt(Math.floor(starts[i] / barB)));
+      }
+      ks.push(k);
+    }
+    const nearest = (cands, from) => cands.reduce((a, b) => (Math.abs(b - from) < Math.abs(a - from) ? b : a));
+    const prev = ks[Math.max(0, n - 3)];
+    if (n >= 3) ks[n - 2] = minor ? 3 : nearest([1, 6], prev); // 레 → 도, 솔 → 라로 맺는다
+    ks[n - 1] = minor ? 4 : nearest([0, 5], ks[Math.max(0, n - 2)]);
+    const segP = seg.map(sg => Math.min(500, Math.max(100, mPitch(buf, sr, sg.at, sg.len))));
+    const notes = syl.map((sy, i) => {
+      const m = MTONES[ks[i]], j = seg.length === n ? i : Math.min(seg.length - 1, Math.floor(i * seg.length / n));
+      return { s: sy.s, w: sy.w, m, freq: mHz(m), pos: starts[i], beats: beats[i], t: starts[i] * beat, dur: beats[i] * beat, seg: seg[j], from: segP[j] };
+    });
+    const bars = Math.ceil(p / barB);
+    return { notes, len: bars * barB * beat, beat, barB, bars, mood, prog, intro: beat * 2, text: (text || '').trim() };
+  }
+  // 악보: 오선 위에 음표, 음표 밑에 가사 글자. 음마다 색이 다르다 (도 빨강, 레 주황 … 라 파랑).
+  // 노래가 나오는 동안 부르는 음표와 글자가 커진다. 한 줄에 네 마디씩.
+  const MCOL = { 0: '#FF5B5B', 2: '#FFA654', 4: '#F2C230', 5: '#4CB944', 7: '#2FB7A8', 9: '#4D7CFE', 11: '#A989F2' };
+  const MSTEP = { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6 };
+  function mDraw() {
+    const { notes, barB, bars } = M.song;
+    const U = 36, BW = barB * U + 14, PER = 4, RH = 80, X0 = 8, rows = Math.ceil(bars / PER);
+    const sv = mk('svg', { viewBox: `0 0 ${X0 * 2 + Math.min(bars, PER) * BW} ${rows * RH}`, class: 'msheet', 'aria-hidden': 'true' });
+    for (let r = 0; r < rows; r++) {
+      const top = r * RH + 16, nb = Math.min(PER, bars - r * PER);
+      for (let i = 0; i < 5; i++) mk('line', { x1: X0, x2: X0 + nb * BW, y1: top + i * 8, y2: top + i * 8, class: 'mline' }, sv);
+      for (let b = 0; b <= nb; b++) mk('line', { x1: X0 + b * BW, x2: X0 + b * BW, y1: top, y2: top + 32, class: 'mbar' + (r * PER + b === bars ? ' end' : '') }, sv);
+    }
+    const stepOf = m => MSTEP[m % 12] + (Math.floor(m / 12) - 5) * 7; // 가운데 도 = 0, 오선 맨 아래 줄(미) = 2
+    const hs = notes.map(nn => {
+      const bar = Math.floor(nn.pos / barB), bottom = Math.floor(bar / PER) * RH + 48;
+      const x = X0 + (bar % PER) * BW + 11 + (nn.pos - bar * barB) * U, st = stepOf(nn.m);
+      return { nn, x, st, y: bottom - (st - 2) * 4, bottom, up: st < 6 };
+    });
+    // 반 박 두 개는 들보로 묶는다. 두 기둥 방향은 같게.
+    const pair = hs.map((h, i) => h.nn.beats === 0.5 && h.nn.pos % 1 === 0 && hs[i + 1] && hs[i + 1].nn.beats === 0.5);
+    pair.forEach((on, i) => { if (on) hs[i].up = hs[i + 1].up = (hs[i].st + hs[i + 1].st) / 2 < 6; });
+    M.dots = []; M.chars = [];
+    hs.forEach((h, i) => {
+      const { nn, x, y, st, bottom, up } = h, col = MCOL[nn.m % 12], open = nn.beats >= 2;
+      const g = mk('g', { class: 'msn' }, sv);
+      if (st <= 0) mk('line', { x1: x - 8, x2: x + 8, y1: bottom + 8, y2: bottom + 8, class: 'mline' }, g); // 가운데 도의 덧줄
+      if (nn.beats < 4) {
+        h.sx = up ? x + 4.6 : x - 4.6; h.sy = up ? y - 25 : y + 25;
+        mk('line', { x1: h.sx, x2: h.sx, y1: y, y2: h.sy, class: 'mstem' }, g);
+      }
+      mk('ellipse', { cx: x, cy: y, rx: 5.2, ry: 3.8, transform: `rotate(-20 ${x} ${y})`, fill: open ? 'var(--paper)' : col, stroke: col, 'stroke-width': open ? 2.2 : 1 }, g);
+      if (nn.beats === 1.5 || nn.beats === 3) mk('circle', { cx: x + 10, cy: st % 2 === 0 ? y - 3 : y, r: 2.3, class: 'mdot' }, g); // 점음표
+      if (nn.beats === 0.5 && !pair[i] && !pair[i - 1]) mk('path', { d: up ? `M${h.sx} ${h.sy} q7 5 5 13` : `M${h.sx} ${h.sy} q7 -5 5 -13`, class: 'mflag' }, g);
+      const t = mk('text', { x, y: bottom + 24, class: 'msl' }, sv);
+      t.textContent = nn.s;
+      M.dots.push(g); M.chars.push(t);
+    });
+    hs.forEach((h, i) => { if (pair[i]) mk('line', { x1: h.sx, y1: h.sy, x2: hs[i + 1].sx, y2: hs[i + 1].sy, class: 'mbeam' }, sv); });
+    mStage.replaceChildren(sv);
   }
   // 잔향: 짧은 울림을 깔면 조각조각 난 소리가 한 공간에서 부른 것처럼 매끄럽게 묶인다
   function mVerb(ctx) {
@@ -3222,8 +3267,9 @@ body { margin: 0; overscroll-behavior: none; }
     return v;
   }
   // 노래를 소리로 깐다. ctx가 스피커든(실시간) 녹음기든(파일 저장) 똑같은 소리가 난다.
+  // 꼼지 악기(song.voice가 'inst')는 피리 같은 소리로 가락을 부르고, 'mine'이면 아이 목소리로 부른다.
   function mSchedule(ctx, out, t0, song) {
-    const nodes = [], { notes, len, eighth, barE, mood, intro } = song;
+    const nodes = [], { notes, len, beat, barB, bars, mood, prog, intro } = song, mine = song.voice === 'mine';
     // 모든 소리 → 컴프레서(음량을 고르게) → 밖으로. 잔향은 옆길로 섞는다.
     const mix = ctx.createGain(), comp = ctx.createDynamicsCompressor(), wet = ctx.createGain();
     comp.threshold.value = -18; comp.knee.value = 18; comp.ratio.value = 4;
@@ -3242,48 +3288,72 @@ body { margin: 0; overscroll-behavior: none; }
     };
     // 예비박: 똑, 똑 (노래가 곧 시작된다)
     osc('square', 1660, t0, 0.06, 0.04);
-    osc('square', 1660, t0 + eighth * 2, 0.06, 0.04);
+    osc('square', 1660, t0 + beat, 0.06, 0.04);
     const m0 = t0 + intro;
-    // 아이 목소리: 음절마다 그 음 높이로 튼다
-    const wav = ctx.createBuffer(1, M.buf.length, M.sr);
-    wav.getChannelData(0).set(M.buf);
+    // 꼼지 악기: 피리처럼 부드럽게 끌고, 살짝 떨림을 넣어 노래하듯 들리게 한다
+    const lead = (f, at, dur, peak) => {
+      const o = ctx.createOscillator(), g = ctx.createGain(), lfo = ctx.createOscillator(), lg = ctx.createGain(), end = at + dur;
+      o.type = 'triangle'; o.frequency.value = f;
+      lfo.frequency.value = 5.5;
+      lg.gain.setValueAtTime(0, at); lg.gain.linearRampToValueAtTime(f * 0.007, at + Math.min(0.3, dur));
+      lfo.connect(lg).connect(o.frequency);
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.exponentialRampToValueAtTime(peak, at + 0.03);
+      g.gain.setValueAtTime(peak, Math.max(at + 0.03, end - 0.07));
+      g.gain.exponentialRampToValueAtTime(0.0001, end + 0.05);
+      o.connect(g).connect(mix);
+      o.start(at); lfo.start(at); o.stop(end + 0.1); lfo.stop(end + 0.1);
+      nodes.push(o, lfo);
+    };
+    let wav = null;
+    if (mine && M.buf) { wav = ctx.createBuffer(1, M.buf.length, M.sr); wav.getChannelData(0).set(M.buf); }
     notes.forEach(nn => {
-      const s = ctx.createBufferSource(), e = ctx.createGain(), at = m0 + nn.t;
-      s.buffer = wav; s.playbackRate.value = nn.rate;
-      // 부드럽게 들어왔다가 제 길이 안에서 잦아든다. 음절 사이는 잔향이 메워 준다.
+      const at = m0 + nn.t, dur = nn.dur * 0.95;
+      if (!wav || !nn.seg) {
+        lead(nn.freq, at, dur, 0.17);
+        osc('sine', nn.freq * 2, at, 0.3, 0.05, 0.005); // 첫소리가 종처럼 또렷하게
+        return;
+      }
+      // 내 목소리: 들린 음절을 음표 높이로 바꿔 튼다. 음표가 길면 가운데 모음을 되풀이해 길게 끈다.
+      const sg = nn.seg, s = ctx.createBufferSource(), e = ctx.createGain();
+      s.buffer = wav;
+      s.playbackRate.value = Math.min(1.7, Math.max(0.6, nn.freq / nn.from));
+      const ls = (sg.at + sg.len * 0.45) / M.sr, le = (sg.at + sg.len * 0.8) / M.sr;
+      const loop = le - ls > 0.03;
+      if (loop) { s.loop = true; s.loopStart = ls; s.loopEnd = le; }
       e.gain.setValueAtTime(0.0001, at);
       e.gain.linearRampToValueAtTime(0.9, at + 0.02);
-      e.gain.setValueAtTime(0.9, at + Math.max(0.02, nn.dur - 0.08));
-      e.gain.linearRampToValueAtTime(0.0001, at + nn.dur);
+      e.gain.setValueAtTime(0.9, at + Math.max(0.02, dur - 0.06));
+      e.gain.linearRampToValueAtTime(0.0001, at + dur);
       s.connect(e).connect(mix);
-      s.start(at, nn.at / M.sr, nn.len / M.sr); // 딱 제 음절까지만 (다음 음절을 미리 틀지 않는다)
+      if (loop) s.start(at, sg.at / M.sr); else s.start(at, sg.at / M.sr, sg.len / M.sr); // 다음 음절을 미리 틀지 않는다
+      s.stop(at + dur + 0.02);
       nodes.push(s);
-      osc('triangle', nn.freq, at, nn.dur + 0.1, 0.05, 0.05); // 같은 음을 밑에 깔아 가락을 또렷하게
+      lead(nn.freq, at, dur, 0.035); // 같은 음을 밑에 작게 깔아 가락을 잡아 준다
     });
     // 반주: 느낌마다 다르게 친다 (bounce 통통 / march 쿵쿵 / waltz 쿵짝짝 / soft 또르르)
-    const ok = at => at < m0 + len - 0.01; // 노래가 끝난 뒤에는 치지 않는다
-    const bars = Math.ceil(len / (barE * eighth));
     for (let b = 0; b < bars; b++) {
-      const name = mood.prog[b % mood.prog.length], root = ROOTS[name], tones = CHORDS[name];
-      const bt = m0 + b * barE * eighth;
-      const chord = (at, dur, peak, type) => { if (ok(at)) tones.forEach(sm => osc(type || 'triangle', 261.63 * Math.pow(2, sm / 12) / 2, at, dur, peak, 0.01)); };
-      if (mood.feel === 'waltz') { // 쿵 짝 짝
-        if (ok(bt)) osc('sine', root, bt, eighth * 2.4, 0.14, 0.03);
-        chord(bt + eighth * 2, eighth * 1.6, 0.035, 'sine');
-        chord(bt + eighth * 4, eighth * 1.6, 0.035, 'sine');
+      const ch = MKEY[prog[b % prog.length]], bt = m0 + b * barB * beat, root = mHz(ch.bass);
+      const cf = ch.pcs.map(pc => mHz(48 + pc));
+      const chord = (at, dur, peak, type) => cf.forEach(f => osc(type || 'triangle', f, at, dur, peak, 0.01));
+      if (barB === 3) { // 쿵 짝 짝
+        osc('sine', root, bt, beat * 1.2, 0.14, 0.03);
+        chord(bt + beat, beat * 0.8, 0.035, 'sine');
+        chord(bt + beat * 2, beat * 0.8, 0.035, 'sine');
       } else if (mood.feel === 'soft') { // 낮은 음 위에 화음을 또르르 펼친다
-        if (ok(bt)) osc('sine', root, bt, eighth * 5, 0.11, 0.05);
-        tones.forEach((sm, j) => { const at = bt + (j + 1) * eighth * 2; if (ok(at)) osc('sine', 261.63 * Math.pow(2, sm / 12) / 2, at, eighth * 2.4, 0.05, 0.08); });
+        osc('sine', root, bt, beat * 2.5, 0.11, 0.05);
+        cf.forEach((f, j) => osc('sine', f, bt + (j + 1) * beat, beat * 1.2, 0.05, 0.08));
       } else { // bounce·march: 쿵(뿌리)–짝(화음)
         const hard = mood.feel === 'march';
-        [0, 4].forEach(ei => { const at = bt + ei * eighth; if (ok(at)) osc(hard ? 'triangle' : 'sine', ei ? root * 1.5 : root, at, eighth * 1.6, hard ? 0.16 : 0.13); });
-        [2, 6].forEach(ei => chord(bt + ei * eighth, eighth * 1.2, hard ? 0.05 : 0.04));
-        if (!hard) [1, 3, 5, 7].forEach(ei => { const at = bt + ei * eighth; if (ok(at)) osc('square', 3320, at, 0.03, 0.012); }); // 찰랑이는 셰이커
+        [0, 2].forEach(bi => osc(hard ? 'triangle' : 'sine', bi ? root * 1.5 : root, bt + bi * beat, beat * 0.8, hard ? 0.16 : 0.13));
+        [1, 3].forEach(bi => chord(bt + bi * beat, beat * 0.6, hard ? 0.05 : 0.04));
+        if (!hard) for (let e8 = 1; e8 < 8; e8 += 2) osc('square', 3320, bt + e8 * beat / 2, 0.03, 0.012); // 찰랑이는 셰이커
       }
     }
     // 마침: 첫 화음을 또르르 굴려서 반짝 끝낸다
-    const endT = CHORDS[mood.prog[0]], endAt = m0 + len + 0.1;
-    endT.concat([endT[0] + 12]).forEach((sm, j) => osc('triangle', 261.63 * Math.pow(2, sm / 12), endAt + j * 0.07, 0.5, 0.08, 0.01));
+    const ep = MKEY[prog[0]].pcs, endAt = m0 + len + 0.05;
+    [60 + ep[0], ...ep.slice(1).map(pc => (pc > ep[0] ? 60 : 72) + pc), 72 + ep[0]]
+      .forEach((m, j) => osc('triangle', mHz(m), endAt + j * 0.07, 0.5, 0.08, 0.01));
     return nodes;
   }
   function mPlaySong() {
@@ -3292,6 +3362,7 @@ body { margin: 0; overscroll-behavior: none; }
     const g = M.gen, out = ac.createGain();
     out.connect(ac.destination); M.out = out;
     const t0 = ac.currentTime + 0.1;
+    M.song.voice = M.voice;
     M.nodes = mSchedule(ac, out, t0, M.song);
     mSet('play');
     const { notes, len, intro } = M.song;
@@ -3299,9 +3370,11 @@ body { margin: 0; overscroll-behavior: none; }
     M.timer = setInterval(() => {
       if (g !== M.gen) { clearInterval(M.timer); return; }
       const now = ac.currentTime - t0 - intro;
-      notes.forEach((n, i) => { const c = M.dots[i]; if (c) c.classList.toggle('on', now >= n.t && now < n.t + n.dur); });
-      const cur = notes.find(n => now >= n.t && now < n.t + n.dur); // 부르는 낱말 가사도 함께 커진다
-      M.chars.forEach((sp, wi) => sp.classList.toggle('on', !!cur && cur.w === wi));
+      notes.forEach((n, i) => { // 부르는 음표와 그 글자가 함께 커진다
+        const on = now >= n.t && now < n.t + n.dur;
+        if (M.dots[i]) M.dots[i].classList.toggle('on', on);
+        if (M.chars[i]) M.chars[i].classList.toggle('on', on);
+      });
       if (ac.currentTime > doneAt) {
         clearInterval(M.timer); M.timer = 0;
         mSet('made');
@@ -3320,6 +3393,7 @@ body { margin: 0; overscroll-behavior: none; }
       const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
       const rate = 44100, total = M.song.intro + M.song.len + 1;
       const ctx = new OAC(1, Math.ceil(total * rate), rate);
+      M.song.voice = M.voice; // 지금 고른 소리(꼼지 악기 / 내 목소리)로 저장한다
       mSchedule(ctx, ctx.destination, 0.05, M.song);
       const buf = await ctx.startRendering();
       const a = document.createElement('a');
@@ -3368,6 +3442,13 @@ body { margin: 0; overscroll-behavior: none; }
     else { M.gen++; mMicDrop(); mSet('idle'); mStage.replaceChildren(); }
   });
   mPlay.addEventListener('click', () => { wake(); mPlaySong(); });
+  // 소리 바꾸기 단추: 누르면 바뀔 소리의 그림을 보여 준다 (🎤 내 목소리 / 🎹 꼼지 악기)
+  const mVoiceShow = () => {
+    $('m-voice').textContent = M.voice === 'mine' ? '🎹' : '🎤';
+    $('m-voice').setAttribute('aria-label', M.voice === 'mine' ? '꼼지 악기로 듣기' : '내 목소리로 듣기');
+  };
+  mVoiceShow();
+  $('m-voice').addEventListener('click', () => { wake(); M.voice = M.voice === 'mine' ? 'inst' : 'mine'; mVoiceShow(); mPlaySong(); });
   $('host-m').replaceChildren(face('kkom'));
   // 화면을 끄거나 다른 앱으로 가면 마이크와 노래를 멈춘다 (만든 노래는 남긴다)
   document.addEventListener('visibilitychange', () => {
