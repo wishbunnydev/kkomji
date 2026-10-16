@@ -643,6 +643,51 @@ button.day { cursor: pointer; }
   .tile { flex-direction: row; align-items: center; gap: 10px; padding: 8px 12px; }
   .tile .gi { align-self: auto; width: 44px; height: 44px; }
 }
+
+/* ---------- 쓱싹쓱싹: 컬러링 놀이 ---------- */
+#view-coloring:not([hidden]) { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 10px; }
+.cl-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.cl-wrap[hidden] { display: none; }
+#cl-themes { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; flex: none; }
+#cl-themes .cth { flex: none; display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 2.5px solid #F2E3B8; border-radius: 22px; background: #fff; font: inherit; font-weight: 700; font-size: 1.05rem; color: #4A4A4A; cursor: pointer; }
+#cl-themes .cth .ce { font-size: 1.3rem; }
+#cl-themes .cth[aria-pressed="true"] { background: #F7C948; border-color: #E3AC2E; }
+#cl-grid { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; align-content: start; padding: 2px; }
+#cl-grid .cpic { border: 2.5px solid #F2E3B8; border-radius: 16px; background: #fff; padding: 6px 6px 8px; font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 3px; text-align: left; }
+#cl-grid .cpic img { width: 100%; aspect-ratio: 43 / 24; object-fit: cover; border-radius: 10px; background: #fff; }
+#cl-grid .cpic b { font-size: .95rem; color: #4A4A4A; }
+#cl-grid .cpic small { color: #9b8f78; font-size: .75rem; }
+#cl-stage { flex: 1; min-height: 0; display: flex; gap: 10px; }
+#cl-boardwrap { flex: 1; min-width: 0; position: relative; display: flex; }
+#cl-board { margin: auto; background: #F7C948; border: 3px solid #E3AC2E; border-radius: 26px; padding: 14px; box-shadow: 0 4px 10px rgba(90, 70, 20, .18); }
+#cl-canvas { display: block; background: #fff; border-radius: 14px; border: 2px solid #E3AC2E; touch-action: none; }
+#cl-side { flex: none; display: flex; flex-direction: column; justify-content: space-between; align-items: center; gap: 8px; padding: 2px 0; }
+.cl-pair { display: flex; gap: 8px; }
+.cl-btn { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 15px; border: 2px solid #EFE3C8; background: #fff; cursor: pointer; box-shadow: 0 2px 5px rgba(90, 70, 20, .15); padding: 0; }
+.cl-btn svg { width: 24px; height: 24px; }
+.cl-btn.big { width: 60px; height: 60px; border-radius: 19px; }
+.cl-btn.big svg { width: 30px; height: 30px; }
+#cl-tool { background: #FFE9A8; border-color: #F7C948; }
+#cl-color { border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 0 2px #EFE3C8, 0 2px 5px rgba(90, 70, 20, .2); background-size: cover; }
+#cl-trash { background: #FFD3C4; }
+#cl-save { background: #BFEBD9; }
+#cl-undo { background: #D8CCF7; }
+#cl-eraser[aria-pressed="true"] { background: #FFE9A8; border-color: #F7C948; }
+.cl-pop { position: absolute; z-index: 5; background: #FFFDF6; border: 2px solid #F2E3B8; border-radius: 20px; box-shadow: 0 6px 18px rgba(90, 70, 20, .25); padding: 10px; }
+#cl-toolpop { top: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 8px; max-width: 360px; justify-content: flex-end; }
+#cl-colorpop { top: 8px; right: 8px; display: grid; grid-template-columns: repeat(5, 44px); gap: 9px; max-height: calc(100% - 16px); overflow-y: auto; }
+.cl-tbtn { width: 52px; height: 52px; border-radius: 16px; border: 2px solid #EFE3C8; background: #fff; display: grid; place-items: center; cursor: pointer; padding: 0; }
+.cl-tbtn svg { width: 26px; height: 26px; }
+.cl-tbtn[aria-pressed="true"] { background: #FFE9A8; border-color: #F7C948; }
+.cl-cbtn { width: 44px; height: 44px; border-radius: 50%; border: 2.5px solid #fff; box-shadow: 0 0 0 1.5px #EFE3C8; cursor: pointer; padding: 0; background-size: 44px 44px; }
+.cl-cbtn[aria-pressed="true"] { box-shadow: 0 0 0 3px #4A4A4A; }
+@media (max-width: 640px), (max-height: 520px) {
+  .cl-btn { width: 40px; height: 40px; border-radius: 13px; }
+  .cl-btn.big { width: 52px; height: 52px; border-radius: 16px; }
+  #cl-board { padding: 9px; border-radius: 18px; }
+  #cl-grid { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); }
+  #cl-themes .cth { min-height: 38px; padding: 0 10px; font-size: .95rem; }
+}
 </style>
 <meta name="theme-color" content="#FFF8E7">
 <meta name="mobile-web-app-capable" content="yes">
@@ -796,6 +841,40 @@ body { margin: 0; overscroll-behavior: none; }
   </div>
 </div>
 <p class="hint" id="whint">꼼지가 말한 낱말의 끝 글자로 시작하는 낱말을 이어 봐.</p>
+</section>
+
+<section class="view" id="view-coloring" hidden>
+<header class="bar">
+  <button class="chip" id="home-c" type="button">홈</button>
+  <span id="host-c"></span>
+  <h1>쓱싹쓱싹</h1>
+</header>
+<div class="cl-wrap" id="cl-pick">
+  <div id="cl-themes" role="group" aria-label="테마 고르기"></div>
+  <div id="cl-grid" role="group" aria-label="도안 고르기"></div>
+</div>
+<div class="cl-wrap" id="cl-play" hidden>
+  <div id="cl-stage">
+    <div id="cl-boardwrap">
+      <div id="cl-board"><canvas id="cl-canvas"></canvas></div>
+      <div class="cl-pop" id="cl-toolpop" hidden></div>
+      <div class="cl-pop" id="cl-colorpop" hidden></div>
+    </div>
+    <div id="cl-side">
+      <div class="cl-pair">
+        <button class="cl-btn" id="cl-back" type="button"></button>
+        <button class="cl-btn" id="cl-trash" type="button"></button>
+      </div>
+      <button class="cl-btn big" id="cl-tool" type="button"></button>
+      <button class="cl-btn big" id="cl-color" type="button" aria-label="색 고르기"></button>
+      <button class="cl-btn" id="cl-eraser" type="button" aria-pressed="false"></button>
+      <div class="cl-pair">
+        <button class="cl-btn" id="cl-save" type="button"></button>
+        <button class="cl-btn" id="cl-undo" type="button"></button>
+      </div>
+    </div>
+  </div>
+</div>
 </section>
 
 <div class="fb" id="cheer" role="status" hidden></div>
@@ -3575,9 +3654,537 @@ body { margin: 0; overscroll-behavior: none; }
   });
   $('host-w').replaceChildren(face('kkom'));
 
+  // ================= 쓱싹쓱싹: 컬러링 =================
+  // 도안 위를 누르면 손가락이 닿은 칸(선 안쪽)에만 칠해진다. 어떤 도구든 선을 넘지 않는다.
+  const CL_THEMES = [
+    ['dino', '공룡', 'Dinosaur', '🦖'],
+    ['animal', '동물', 'Animals', '🐶'],
+    ['vehicle', '탈것', 'Vehicles', '🚒'],
+    ['ocean', '바다', 'Ocean', '🐳'],
+    ['space', '우주', 'Space', '🚀'],
+    ['food', '음식', 'Food', '🍰'],
+    ['toy', '장난감', 'Toys', '🧸'],
+    ['shape', '도형', 'Shapes', '⭐'],
+    ['music', '악기', 'Music', '🎹'],
+    ['nature', '꽃과 자연', 'Nature', '🌻'],
+    ['princess', '공주와 요정', 'Princess', '👑'],
+    ['bug', '곤충', 'Bugs', '🐞'],
+    ['robot', '로봇', 'Robots', '🤖'],
+    ['upper', 'ABC 대문자', 'Uppercase', '🔠'],
+    ['lower', 'abc 소문자', 'Lowercase', '🔡'],
+    ['hangul', '한글', 'Hangul', '✏️'],
+  ];
+  const CL_PICS = {
+    dino: [['트리케라톱스', 'Triceratops'], ['티라노사우루스', 'T-rex'], ['스테고사우루스', 'Stegosaurus'], ['안킬로사우루스', 'Ankylosaurus'], ['공놀이 친구들', 'Dino Friends'], ['브론토사우루스', 'Brontosaurus'], ['프테라노돈', 'Pterodactyl'], ['파라사우롤로푸스', 'Parasaurolophus'], ['공룡 알', 'Dino Egg'], ['거품 목욕', 'Bubble Bath']],
+    animal: [['고양이', 'Kitten'], ['기린', 'Giraffe'], ['강아지', 'Puppy'], ['여우', 'Fox'], ['토끼', 'Bunny'], ['펭귄', 'Penguin'], ['판다', 'Panda'], ['코끼리', 'Elephant'], ['거북이', 'Turtle'], ['사자', 'Lion']],
+    vehicle: [['기차', 'Train'], ['버스', 'Bus'], ['헬리콥터', 'Helicopter'], ['소방차', 'Fire Truck'], ['트랙터', 'Tractor'], ['돛단배', 'Sailboat'], ['포크레인', 'Excavator'], ['경찰차', 'Police Car'], ['비행기', 'Airplane'], ['자전거', 'Bicycle']],
+    ocean: [['돌고래', 'Dolphin'], ['흰동가리', 'Clownfish'], ['게', 'Crab'], ['고래', 'Whale'], ['잠수함', 'Submarine'], ['바다거북', 'Sea Turtle'], ['문어', 'Octopus'], ['조개와 불가사리', 'Shells'], ['해마', 'Seahorse'], ['아기 상어', 'Baby Shark']],
+    space: [['달과 별', 'Moon & Stars'], ['별똥별', 'Shooting Star'], ['토성', 'Saturn'], ['로켓', 'Rocket'], ['우주 강아지', 'Space Puppy'], ['UFO', 'UFO'], ['우주 정거장', 'Space Station'], ['지구', 'Earth'], ['우주인', 'Astronaut'], ['태양계', 'Solar System']],
+    food: [['피자', 'Pizza'], ['도넛', 'Donut'], ['아이스크림', 'Ice Cream'], ['과일 바구니', 'Fruit Basket'], ['수박', 'Watermelon'], ['컵케이크', 'Cupcake'], ['생일 케이크', 'Birthday Cake'], ['딸기', 'Strawberry'], ['햄버거', 'Hamburger'], ['쿠키와 우유', 'Cookies & Milk']],
+    toy: [['곰인형', 'Teddy Bear'], ['비눗방울', 'Bubbles'], ['연', 'Kite'], ['블록', 'Blocks'], ['퍼즐', 'Puzzle'], ['풍선', 'Balloons'], ['팽이', 'Spinning Top'], ['요요', 'Yo-yo'], ['오리 인형', 'Rubber Duck'], ['장난감 상자', 'Toy Box']],
+    shape: [['동그라미', 'Circle'], ['네모', 'Square'], ['세모', 'Triangle'], ['하트', 'Heart'], ['도형 기차', 'Shape Train'], ['별', 'Star'], ['도형 집', 'Shape House'], ['도형 물고기', 'Shape Fish'], ['무지개', 'Rainbow'], ['도형 꽃', 'Shape Flower']],
+    music: [['피아노', 'Piano'], ['기타', 'Guitar'], ['바이올린', 'Violin'], ['트럼펫', 'Trumpet'], ['실로폰', 'Xylophone'], ['플루트', 'Flute'], ['하프', 'Harp'], ['마라카스', 'Maracas'], ['드럼', 'Drum'], ['탬버린', 'Tambourine']],
+    nature: [['선인장', 'Cactus'], ['산과 해', 'Mountains'], ['벚꽃나무', 'Cherry Blossom'], ['네잎클로버', 'Clover'], ['사과나무', 'Apple Tree'], ['해바라기', 'Sunflower'], ['버섯집', 'Mushroom House'], ['튤립', 'Tulips'], ['나비와 꽃', 'Butterfly'], ['해와 무지개', 'Sun & Rainbow']],
+    princess: [['요정', 'Fairy'], ['인어공주', 'Mermaid'], ['마법봉', 'Magic Wand'], ['유니콘', 'Unicorn'], ['성', 'Castle'], ['왕관', 'Crown'], ['개구리 왕자', 'Frog Prince'], ['아기 용', 'Baby Dragon'], ['공주', 'Princess'], ['호박 마차', 'Pumpkin Carriage']],
+    bug: [['꿀벌', 'Honeybee'], ['달팽이', 'Snail'], ['무당벌레', 'Ladybug'], ['잠자리', 'Dragonfly'], ['반딧불이', 'Firefly'], ['애벌레', 'Caterpillar'], ['사슴벌레', 'Stag Beetle'], ['귀뚜라미', 'Cricket'], ['개미', 'Ants'], ['메뚜기', 'Grasshopper']],
+    robot: [['로봇 친구', 'Robot Friend'], ['드론 로봇', 'Drone Robot'], ['로봇 강아지', 'Robot Puppy'], ['요리사 로봇', 'Chef Robot'], ['춤추는 로봇', 'Dancing Robot'], ['청소 로봇', 'Cleaning Robot'], ['우편배달 로봇', 'Mail Robot'], ['로봇과 아이', 'Robot & Kid'], ['로봇 고양이', 'Robot Cat'], ['우주 로봇', 'Space Robot']],
+  };
+  CL_PICS.upper = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].map(ch => [ch, 'Alphabet']);
+  CL_PICS.lower = [...'abcdefghijklmnopqrstuvwxyz'].map(ch => [ch, 'alphabet']);
+  CL_PICS.hangul = [['엄마', 'Mom'], ['아빠', 'Dad'], ['사과', 'Apple'], ['나무', 'Tree'], ['바다', 'Sea'], ['하늘', 'Sky'], ['별', 'Star'], ['달', 'Moon'], ['해', 'Sun'], ['꽃', 'Flower'], ['곰', 'Bear'], ['집', 'House'], ['눈', 'Snow'], ['비', 'Rain'], ['구름', 'Cloud'], ['사랑', 'Love'], ['토끼', 'Rabbit'], ['강아지', 'Puppy'], ['고양이', 'Cat'], ['공룡', 'Dino'], ['기차', 'Train'], ['로봇', 'Robot'], ['무지개', 'Rainbow'], ['우유', 'Milk']];
+  const CL_COLORS = ['#FF9ECF', '#FFB7D9', '#C85BD8', '#FF5F9E', '#FF5B5B', '#FF8A80', '#FFA654', '#FFC9A1', '#FFD93D', '#FFE48A', '#F7C948', '#FFF2B0', '#9FE06B', '#C8F0A0', '#4CB944', '#2E8B57', '#8EC3F4', '#4D7CFE', '#A989F2', '#B07B52', '#8D6E63', '#4A4A4A', '#9AA3AE', '#FFFFFF'];
+  const CL_RAINBOW = ['#FF8A80', '#FFBE76', '#FFE066', '#A8E06E', '#7FD1F7', '#9FA8F7', '#D7A6F2'];
+  const CL_TOOLS = [['bucket', '쏟기'], ['roller', '페인팅'], ['brush', '붓'], ['pen', '펜'], ['stamp', '도장'], ['rainbow', '무지개'], ['sparkle', '반짝이'], ['gbrush', '반짝 붓'], ['rsparkle', '무지개 반짝']];
+  const CL_PATTERNS = ['flower', 'wave', 'dot', 'star', 'heart', 'stripe', 'check', 'bubble'];
+  const CL_FILLS = { bucket: 1, stamp: 1, rainbow: 1, sparkle: 1 };
+  const CL = { theme: 'dino', pic: -1, tool: 'bucket', color: '#9FE06B', pattern: 'flower', eraser: false,
+    img: null, W: 0, H: 0, line: null, region: null, boxes: [], masks: new Map(),
+    paint: null, scratch: null, cv: null, ctx: null, undo: [], stroke: null, busy: false, kept: new Map(), gen: 0 };
+  // 단추 그림 (24x24 선 아이콘)
+  const CL_P = {
+    back: 'M15 18 L9 12 L15 6',
+    trash: 'M3 6 H21 M19 6 V20 a2 2 0 0 1 -2 2 H7 a2 2 0 0 1 -2 -2 V6 M8 6 V4 a2 2 0 0 1 2 -2 h4 a2 2 0 0 1 2 2 v2',
+    down: 'M21 15 v4 a2 2 0 0 1 -2 2 H5 a2 2 0 0 1 -2 -2 v-4 M7 10 L12 15 L17 10 M12 15 V3',
+    undo: 'M9 14 L4 9 L9 4 M4 9 h10.5 a5.5 5.5 0 0 1 0 11 H11',
+    eraser: 'M7 21 L2.7 16.7 a2.4 2.4 0 0 1 0 -3.4 L12.3 3.7 a2.4 2.4 0 0 1 3.4 0 L17.9 9.3 a2.4 2.4 0 0 1 0 3.4 L13 21 M22 21 H7 M5 11 L14 20',
+    bucket: 'M19 11 L11 3 L2.4 11.6 a2 2 0 0 0 0 2.8 L7.6 19.6 a2 2 0 0 0 2.8 0 L19 11 M5 2 L10 7 M2 13 H17 M22 20 a2 2 0 1 1 -4 0 c0 -1.6 1.7 -2.4 2 -4 .3 1.6 2 2.4 2 4',
+    roller: 'M2 4 a2 2 0 0 1 2 -2 h12 a2 2 0 0 1 2 2 v2 a2 2 0 0 1 -2 2 H4 a2 2 0 0 1 -2 -2 Z M18 4 h2 a2 2 0 0 1 2 2 v3 a2 2 0 0 1 -2 2 h-8 a2 2 0 0 0 -2 2 v2 M8 17 a1 1 0 0 1 1 -1 h2 a1 1 0 0 1 1 1 v4 a1 1 0 0 1 -1 1 h-2 a1 1 0 0 1 -1 -1 Z',
+    brush: 'M9.1 11.9 L17.1 3.8 a2.85 2.85 0 1 1 4 4 L13.1 16 M7.1 14.9 c-1.7 0 -3 1.4 -3 3 0 1.3 -2.5 1.5 -2 2 1.1 1.1 2.5 2 4 2 2.2 0 4 -1.8 4 -4 a3 3 0 0 0 -3 -3 Z',
+    pen: 'M17 3 a2.85 2.83 0 1 1 4 4 L7.5 20.5 L2 22 L3.5 16.5 Z M15 5 L19 9',
+    stamp: 'M5 22 H19 M19.3 13.7 A2.5 2.5 0 0 0 17.5 13 h-11 A2.5 2.5 0 0 0 4 15.5 V17 a1 1 0 0 0 1 1 h14 a1 1 0 0 0 1 -1 v-1.5 c0 -.7 -.3 -1.3 -.7 -1.8 Z M14 13 V8.5 C14 7 15 7 15 5 a3 3 0 0 0 -6 0 c0 2 1 2 1 3.5 V13',
+    rainbow: 'M22 17 a10 10 0 0 0 -20 0 M6 17 a6 6 0 0 1 12 0 M10 17 a2 2 0 0 1 4 0',
+    sparkle: 'M12 3 L10.1 8.8 a2 2 0 0 1 -1.3 1.3 L3 12 l5.8 1.9 a2 2 0 0 1 1.3 1.3 L12 21 l1.9 -5.8 a2 2 0 0 1 1.3 -1.3 L21 12 l-5.8 -1.9 a2 2 0 0 1 -1.3 -1.3 Z',
+    gbrush: 'M21.6 3.6 L20.4 2.4 a1.2 1.2 0 0 0 -1.7 0 L2.4 18.6 a1.2 1.2 0 0 0 0 1.7 L3.6 21.6 a1.2 1.2 0 0 0 1.7 0 L21.6 5.4 a1.2 1.2 0 0 0 0 -1.7 Z M14 7 L17 10 M5 6 V10 M3 8 H7 M19 14 V18 M17 16 H21 M10 2 V4',
+    rsparkle: 'M22 19 a10 10 0 0 0 -20 0 M6 19 a6 6 0 0 1 12 0 M12 2 V5 M10.5 3.5 H13.5 M4 5 V7.5 M2.8 6.2 H5.2 M20 5 V7.5 M18.8 6.2 H21.2',
+  };
+  function clIco(name, color) {
+    const s = mk('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true' });
+    mk('path', { d: CL_P[name], fill: 'none', stroke: color || '#4A4A4A', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, s);
+    return s;
+  }
+  // ----- 색 섞기 -----
+  const clHexv = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  const clMix = (h, w) => { const v = clHexv(h); return `rgb(${v.map(x => Math.round(x + (255 - x) * w)).join(',')})`; }; // 흰색과 섞기
+  const clDark = (h, w) => { const v = clHexv(h); return `rgb(${v.map(x => Math.round(x * (1 - w))).join(',')})`; };
+  // ----- 반짝이와 무늬 -----
+  const clSpark4 = (c, x, y, r, col) => { // 네 갈래 반짝이
+    c.fillStyle = col; c.beginPath();
+    c.moveTo(x, y - r); c.quadraticCurveTo(x, y, x + r, y); c.quadraticCurveTo(x, y, x, y + r);
+    c.quadraticCurveTo(x, y, x - r, y); c.quadraticCurveTo(x, y, x, y - r); c.fill();
+  };
+  const clStar5 = (c, x, y, r, col) => {
+    c.fillStyle = col; c.beginPath();
+    for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? r * 0.45 : r; k ? c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr) : c.moveTo(x, y - r); }
+    c.closePath(); c.fill();
+  };
+  const clHeartS = (c, x, y, r, col) => {
+    c.fillStyle = col; c.beginPath(); c.moveTo(x, y + r * 0.9);
+    c.bezierCurveTo(x - r * 1.4, y - r * 0.1, x - r * 0.7, y - r * 1.1, x, y - r * 0.4);
+    c.bezierCurveTo(x + r * 0.7, y - r * 1.1, x + r * 1.4, y - r * 0.1, x, y + r * 0.9); c.fill();
+  };
+  function clPattern(kind, color) { // 도장 무늬 타일 (바탕은 연하게, 무늬는 고른 색으로)
+    const t = document.createElement('canvas'); t.width = t.height = 72;
+    const c = t.getContext('2d');
+    c.fillStyle = clMix(color, 0.72); c.fillRect(0, 0, 72, 72);
+    c.fillStyle = color; c.strokeStyle = color;
+    if (kind === 'dot') [[18, 18], [54, 18], [36, 36], [18, 54], [54, 54]].forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 7, 0, 7); c.fill(); });
+    else if (kind === 'flower') {
+      const fl = (x, y, r, pet, cen) => {
+        c.fillStyle = pet;
+        for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; c.beginPath(); c.arc(x + Math.cos(a) * r, y + Math.sin(a) * r, r * 0.72, 0, 7); c.fill(); }
+        c.fillStyle = cen; c.beginPath(); c.arc(x, y, r * 0.65, 0, 7); c.fill();
+      };
+      fl(18, 18, 7.5, '#fff', color); fl(54, 54, 7.5, '#fff', color);
+      fl(54, 18, 5.5, color, '#fff'); fl(18, 54, 5.5, color, '#fff');
+    } else if (kind === 'wave') {
+      c.lineWidth = 5; c.lineCap = 'round';
+      for (let y = 9; y < 80; y += 18) {
+        c.beginPath();
+        for (let x = -4; x <= 76; x += 4) { const yy = y + Math.sin(x / 72 * Math.PI * 2) * 5; x === -4 ? c.moveTo(x, yy) : c.lineTo(x, yy); }
+        c.stroke();
+      }
+    } else if (kind === 'star') { clStar5(c, 18, 18, 9, color); clStar5(c, 54, 54, 9, color); clStar5(c, 54, 18, 6, '#fff'); clStar5(c, 18, 54, 6, '#fff'); }
+    else if (kind === 'heart') { clHeartS(c, 18, 18, 8, color); clHeartS(c, 54, 54, 8, color); clHeartS(c, 54, 18, 5.5, '#fff'); clHeartS(c, 18, 54, 5.5, '#fff'); }
+    else if (kind === 'stripe') { c.lineWidth = 9; for (let i = -72; i <= 144; i += 18) { c.beginPath(); c.moveTo(i, 0); c.lineTo(i + 72, 72); c.stroke(); } }
+    else if (kind === 'check') {
+      c.globalAlpha = 0.45;
+      c.fillRect(0, 8, 72, 16); c.fillRect(0, 44, 72, 16); c.fillRect(8, 0, 16, 72); c.fillRect(44, 0, 16, 72);
+      c.globalAlpha = 1;
+    } else if (kind === 'bubble') {
+      c.lineWidth = 4;
+      [[18, 20, 10], [52, 14, 7], [40, 44, 12], [14, 54, 7], [60, 58, 9]].forEach(([x, y, r]) => {
+        c.beginPath(); c.arc(x, y, r, 0, 7); c.stroke();
+        c.fillStyle = '#fff'; c.beginPath(); c.arc(x - r * 0.35, y - r * 0.35, r * 0.25, 0, 7); c.fill(); c.fillStyle = color;
+      });
+    }
+    return t;
+  }
+  function clSprinkle(c, minx, miny, maxx, maxy, col) { // 흰 반짝이 뿌리기
+    const area = (maxx - minx) * (maxy - miny);
+    for (let i = 0; i < area / 2600 + 8; i++) {
+      const x = minx + Math.random() * (maxx - minx), y = miny + Math.random() * (maxy - miny);
+      if (Math.random() < 0.4) clSpark4(c, x, y, 3 + Math.random() * 5, col);
+      else { c.fillStyle = col; c.beginPath(); c.arc(x, y, 1.5 + Math.random() * 2.5, 0, 7); c.fill(); }
+    }
+  }
+  function clGlitter(c, minx, miny, maxx, maxy, color) { // 반짝이 가루
+    const area = (maxx - minx) * (maxy - miny), lite = clMix(color, 0.55), dark = clDark(color, 0.25);
+    for (let i = 0; i < area / 420 + 20; i++) {
+      const x = minx + Math.random() * (maxx - minx), y = miny + Math.random() * (maxy - miny);
+      c.fillStyle = Math.random() < 0.5 ? lite : dark;
+      c.beginPath(); c.arc(x, y, 1 + Math.random() * 2.2, 0, 7); c.fill();
+    }
+    clSprinkle(c, minx, miny, maxx, maxy, 'rgba(255,255,255,.95)');
+  }
+  // ----- 도안 분석: 선과 칸 나누기 -----
+  function clAnalyze(img) {
+    const W = CL.W, H = CL.H;
+    const t = document.createElement('canvas'); t.width = W; t.height = H;
+    const tc = t.getContext('2d', { willReadFrequently: true });
+    tc.drawImage(img, 0, 0, W, H);
+    const px = tc.getImageData(0, 0, W, H).data, n = W * H; // file://로 열면 보안 오류가 날 수 있다
+    const line = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      const a = px[i * 4 + 3], lum = 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2];
+      if (a > 60 && lum < 150) line[i] = 1;
+    }
+    const region = new Int32Array(n).fill(-1), stack = new Int32Array(n), boxes = [];
+    let id = 0;
+    for (let s = 0; s < n; s++) {
+      if (line[s] || region[s] >= 0) continue;
+      let top = 0; stack[top++] = s; region[s] = id;
+      let minx = W, miny = H, maxx = 0, maxy = 0;
+      while (top) {
+        const p = stack[--top], x = p % W, y = (p / W) | 0;
+        if (x < minx) minx = x; if (x > maxx) maxx = x;
+        if (y < miny) miny = y; if (y > maxy) maxy = y;
+        if (x > 0 && !line[p - 1] && region[p - 1] < 0) { region[p - 1] = id; stack[top++] = p - 1; }
+        if (x < W - 1 && !line[p + 1] && region[p + 1] < 0) { region[p + 1] = id; stack[top++] = p + 1; }
+        if (y > 0 && !line[p - W] && region[p - W] < 0) { region[p - W] = id; stack[top++] = p - W; }
+        if (y < H - 1 && !line[p + W] && region[p + W] < 0) { region[p + W] = id; stack[top++] = p + W; }
+      }
+      boxes.push([minx, miny, maxx, maxy]); id++;
+    }
+    CL.line = line; CL.region = region; CL.boxes = boxes; CL.masks.clear();
+  }
+  function clMask(id) { // 칸 모양 가림막. 선 밑으로 3픽셀 넓혀서 흰 틈이 안 생기게 한다.
+    let m = CL.masks.get(id);
+    if (m) return m;
+    const { W, H, region, line } = CL, n = W * H;
+    const [minx, miny, maxx, maxy] = CL.boxes[id];
+    const x0 = Math.max(1, minx - 4), x1 = Math.min(W - 2, maxx + 4), y0 = Math.max(1, miny - 4), y1 = Math.min(H - 2, maxy + 4);
+    const mask = new Uint8Array(n);
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const p = y * W + x; if (region[p] === id) mask[p] = 1; }
+    for (let it = 0; it < 3; it++) {
+      const add = [];
+      for (let y = y0; y <= y1; y++) {
+        let p = y * W + x0;
+        for (let x = x0; x <= x1; x++, p++) {
+          if (!mask[p] && line[p] && (mask[p - 1] || mask[p + 1] || mask[p - W] || mask[p + W])) add.push(p);
+        }
+      }
+      for (const p of add) mask[p] = 1;
+    }
+    const cvs = document.createElement('canvas'); cvs.width = W; cvs.height = H;
+    const c = cvs.getContext('2d'), d = c.createImageData(W, H);
+    for (let p = 0; p < n; p++) if (mask[p]) d.data[p * 4 + 3] = 255;
+    c.putImageData(d, 0, 0);
+    CL.masks.set(id, cvs);
+    if (CL.masks.size > 24) CL.masks.delete(CL.masks.keys().next().value);
+    return cvs;
+  }
+  function clRegionAt(x, y) { // 선 위를 눌렀으면 둘레에서 가장 가까운 칸을 찾는다
+    const { W, H, region } = CL;
+    x |= 0; y |= 0;
+    if (x < 0 || y < 0 || x >= W || y >= H) return -1;
+    if (region[y * W + x] >= 0) return region[y * W + x];
+    for (let r = 1; r <= 7; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      const xx = x + dx, yy = y + dy;
+      if (xx >= 0 && yy >= 0 && xx < W && yy < H && region[yy * W + xx] >= 0) return region[yy * W + xx];
+    }
+    return -1;
+  }
+  // ----- 그리기 -----
+  const clBlank = () => { const c = document.createElement('canvas'); c.width = CL.W; c.height = CL.H; return c; };
+  function clStrokeMasked() {
+    const c = CL.scratch.getContext('2d');
+    c.clearRect(0, 0, CL.W, CL.H);
+    c.drawImage(CL.stroke.cvs, 0, 0);
+    if (CL.stroke.mask) { c.globalCompositeOperation = 'destination-in'; c.drawImage(CL.stroke.mask, 0, 0); c.globalCompositeOperation = 'source-over'; }
+    return CL.scratch;
+  }
+  function clDraw() {
+    if (!CL.img) return;
+    const { ctx, W, H } = CL;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(CL.paint, 0, 0);
+    if (CL.stroke && !CL.stroke.eraser) ctx.drawImage(clStrokeMasked(), 0, 0);
+    ctx.globalCompositeOperation = 'multiply'; // 흰 바탕은 사라지고 선만 또렷하게 얹힌다
+    ctx.drawImage(CL.img, 0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  function clSnap() {
+    const c = clBlank();
+    c.getContext('2d').drawImage(CL.paint, 0, 0);
+    CL.undo.push(c);
+    if (CL.undo.length > 10) CL.undo.shift();
+  }
+  function clPos(e) {
+    const r = CL.cv.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width * CL.W, (e.clientY - r.top) / r.height * CL.H];
+  }
+  function clSeg(x0, y0, x1, y1) { // 붓 한 획 (매끈하게: 포인터가 지나간 자리들을 둥근 선으로 잇는다)
+    const s = CL.stroke, c = s.cvs.getContext('2d'), t = s.t;
+    const w = { roller: 56, brush: 30, pen: 10, gbrush: 26, rsparkle: 30 }[t] || 24;
+    const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy);
+    c.lineCap = c.lineJoin = 'round';
+    c.strokeStyle = t === 'rsparkle' ? `hsl(${(s.dist * 0.5) % 360}, 90%, 72%)` : CL.color;
+    c.fillStyle = c.strokeStyle;
+    c.beginPath(); c.arc(x1, y1, w / 2, 0, 7); c.fill();
+    if (len > 0.5) { c.lineWidth = w; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); }
+    if (t === 'gbrush' || t === 'rsparkle') {
+      for (let d = 0; d <= len; d += 9) {
+        const px = x0 + (len ? dx * d / len : 0) + (Math.random() - 0.5) * w;
+        const py = y0 + (len ? dy * d / len : 0) + (Math.random() - 0.5) * w;
+        if (Math.random() < 0.35) clSpark4(c, px, py, 3 + Math.random() * 5, 'rgba(255,255,255,.95)');
+        else { c.fillStyle = 'rgba(255,255,255,.8)'; c.beginPath(); c.arc(px, py, 1.3 + Math.random() * 2.5, 0, 7); c.fill(); }
+      }
+    }
+    s.dist += len;
+  }
+  function clErase(x, y) {
+    const c = CL.paint.getContext('2d');
+    c.save();
+    c.globalCompositeOperation = 'destination-out';
+    c.lineCap = 'round'; c.lineWidth = 48; c.strokeStyle = '#000'; c.fillStyle = '#000';
+    c.beginPath(); c.arc(x, y, 24, 0, 7); c.fill();
+    c.beginPath(); c.moveTo(CL.stroke.lx, CL.stroke.ly); c.lineTo(x, y); c.stroke();
+    c.restore();
+  }
+  function clFillAnim(tmp, cx, cy, maxR) { // 누른 자리에서 동그랗게 퍼지며 칠해진다
+    const pc = CL.paint.getContext('2d');
+    CL.busy = true;
+    const t0 = performance.now(), gen = ++CL.gen;
+    const step = now => {
+      if (gen !== CL.gen) return;
+      const k = Math.min(1, (now - t0) / 380);
+      pc.save(); pc.beginPath(); pc.arc(cx, cy, 24 + k * k * maxR, 0, 7); pc.clip();
+      pc.drawImage(tmp, 0, 0); pc.restore();
+      clDraw();
+      if (k < 1) requestAnimationFrame(step);
+      else CL.busy = false;
+    };
+    requestAnimationFrame(step);
+  }
+  function clFill(tool, x, y) {
+    const id = clRegionAt(x, y);
+    if (id < 0) return;
+    const [minx, miny, maxx, maxy] = CL.boxes[id];
+    const bx = minx - 4, by = miny - 4, bw = maxx - minx + 9, bh = maxy - miny + 9;
+    const tmp = clBlank(), c = tmp.getContext('2d');
+    if (tool === 'bucket') { c.fillStyle = CL.color; c.fillRect(bx, by, bw, bh); }
+    else if (tool === 'stamp') { c.fillStyle = c.createPattern(clPattern(CL.pattern, CL.color), 'repeat'); c.fillRect(bx, by, bw, bh); }
+    else if (tool === 'rainbow') {
+      const h = Math.max(26, bh / 7);
+      for (let i = 0, yy = by; yy <= by + bh; yy += h, i++) { c.fillStyle = CL_RAINBOW[i % 7]; c.fillRect(bx, yy, bw, h + 1); }
+      clSprinkle(c, minx, miny, maxx, maxy, 'rgba(255,255,255,.9)');
+    } else if (tool === 'sparkle') {
+      c.fillStyle = CL.color; c.fillRect(bx, by, bw, bh);
+      clGlitter(c, minx, miny, maxx, maxy, CL.color === '#FFFFFF' ? '#F7C948' : CL.color);
+    }
+    c.globalCompositeOperation = 'destination-in';
+    c.drawImage(clMask(id), 0, 0);
+    clSnap();
+    clFillAnim(tmp, x, y, Math.max(bw, bh));
+    pop();
+  }
+  function clDown(e) {
+    if (CL.busy || !CL.img) return;
+    CL.cv.setPointerCapture(e.pointerId);
+    const [x, y] = clPos(e);
+    if (CL.eraser) {
+      clSnap();
+      CL.stroke = { eraser: true, lx: x, ly: y };
+      clErase(x, y); CL.stroke.lx = x; CL.stroke.ly = y;
+      clDraw();
+      return;
+    }
+    if (CL_FILLS[CL.tool]) { if (CL.region) clFill(CL.tool, x, y); return; }
+    let mask = null;
+    if (CL.region) {
+      const id = clRegionAt(x, y);
+      if (id < 0) return;
+      mask = clMask(id);
+    }
+    CL.stroke = { cvs: clBlank(), mask, lx: x, ly: y, dist: 0, t: CL.tool };
+    clSeg(x, y, x, y);
+    clDraw();
+  }
+  function clMove(e) {
+    if (!CL.stroke) return;
+    for (const ev of (e.getCoalescedEvents ? e.getCoalescedEvents() : [e])) {
+      const [x, y] = clPos(ev);
+      if (CL.stroke.eraser) clErase(x, y);
+      else clSeg(CL.stroke.lx, CL.stroke.ly, x, y);
+      CL.stroke.lx = x; CL.stroke.ly = y;
+    }
+    clDraw();
+  }
+  function clUp() {
+    if (!CL.stroke) return;
+    if (!CL.stroke.eraser) {
+      clSnap();
+      CL.paint.getContext('2d').drawImage(clStrokeMasked(), 0, 0);
+    }
+    CL.stroke = null;
+    clDraw();
+  }
+  // ----- 화면과 단추 -----
+  function clHud() {
+    $('cl-tool').replaceChildren(clIco(CL.tool));
+    $('cl-tool').setAttribute('aria-label', '도구 고르기: 지금은 ' + CL_TOOLS.find(t => t[0] === CL.tool)[1]);
+    const cb = $('cl-color');
+    cb.style.backgroundImage = ''; cb.style.backgroundColor = '';
+    if (CL.tool === 'stamp') { cb.style.backgroundImage = `url(${clPattern(CL.pattern, CL.color).toDataURL()})`; cb.style.backgroundSize = '52px 52px'; }
+    else if (CL.tool === 'rainbow' || CL.tool === 'rsparkle') cb.style.backgroundImage = 'linear-gradient(135deg,' + CL_RAINBOW.join(',') + ')';
+    else cb.style.backgroundColor = CL.color;
+  }
+  function clPopHide() { $('cl-toolpop').hidden = true; $('cl-colorpop').hidden = true; }
+  function clToolPopBuild() {
+    const p = $('cl-toolpop'); p.replaceChildren();
+    CL_TOOLS.forEach(([k, name]) => {
+      const b = el('button', 'cl-tbtn'); b.type = 'button';
+      b.setAttribute('aria-pressed', String(!CL.eraser && CL.tool === k));
+      b.setAttribute('aria-label', name);
+      b.appendChild(clIco(k));
+      b.addEventListener('click', () => {
+        wake(); CL.tool = k; CL.eraser = false;
+        $('cl-eraser').setAttribute('aria-pressed', 'false');
+        clHud(); clPopHide(); tone(520, 0, 0.07);
+      });
+      p.appendChild(b);
+    });
+  }
+  function clColorPopBuild() {
+    const p = $('cl-colorpop'); p.replaceChildren();
+    if (CL.tool === 'stamp') CL_PATTERNS.forEach(k => { // 도장은 무늬부터 고른다
+      const b = el('button', 'cl-cbtn'); b.type = 'button';
+      b.setAttribute('aria-pressed', String(CL.pattern === k));
+      b.setAttribute('aria-label', '무늬');
+      b.style.backgroundImage = `url(${clPattern(k, CL.color).toDataURL()})`;
+      b.addEventListener('click', () => { wake(); CL.pattern = k; clHud(); clColorPopBuild(); });
+      p.appendChild(b);
+    });
+    CL_COLORS.forEach(col => {
+      const b = el('button', 'cl-cbtn'); b.type = 'button';
+      b.setAttribute('aria-pressed', String(CL.color === col));
+      b.setAttribute('aria-label', '색');
+      b.style.backgroundColor = col;
+      b.addEventListener('click', () => {
+        wake(); CL.color = col; clHud();
+        if (CL.tool === 'stamp') clColorPopBuild(); else clPopHide();
+      });
+      p.appendChild(b);
+    });
+  }
+  function clSize() { // 보드가 화면에 알맞게 들어가도록 캔버스 표시 크기를 맞춘다
+    if (!CL.W) return;
+    const wrap = $('cl-boardwrap'), pad = 38;
+    const k = Math.min((wrap.clientWidth - pad) / CL.W, (wrap.clientHeight - pad) / CL.H);
+    if (!(k > 0)) return;
+    CL.cv.style.width = Math.floor(CL.W * k) + 'px';
+    CL.cv.style.height = Math.floor(CL.H * k) + 'px';
+  }
+  function clOpenPic(theme, i) {
+    CL.theme = theme; CL.pic = i;
+    CL.gen++; CL.undo.length = 0; CL.stroke = null; CL.busy = true;
+    $('cl-pick').hidden = true; $('cl-play').hidden = false;
+    clPopHide();
+    const img = new Image();
+    img.onload = () => {
+      CL.img = img;
+      CL.W = img.naturalWidth; CL.H = img.naturalHeight;
+      CL.cv.width = CL.W; CL.cv.height = CL.H;
+      CL.scratch = clBlank();
+      try { clAnalyze(img); } catch (err) { // file://로 열면 도안을 읽지 못한다
+        CL.line = null; CL.region = null; CL.boxes = [];
+        feedback('tip', '이 기기에서는 칸을 나누지 못했어', '인터넷 주소(https)로 열면 선 안쪽에만 칠해져.');
+      }
+      const key = theme + ':' + i;
+      let p = CL.kept.get(key);
+      if (!p) {
+        p = clBlank();
+        CL.kept.set(key, p);
+        if (CL.kept.size > 8) CL.kept.delete(CL.kept.keys().next().value);
+      }
+      CL.paint = p;
+      CL.busy = false;
+      clHud(); clDraw(); clSize();
+    };
+    img.onerror = () => { CL.busy = false; feedback(false, '그림을 못 불러왔어', '잠시 뒤에 다시 해 봐.'); };
+    img.src = 'coloring/' + theme + '/' + String(i + 1).padStart(2, '0') + '.png';
+  }
+  function clPicker(theme) {
+    CL.theme = theme;
+    const th = $('cl-themes'); th.replaceChildren();
+    CL_THEMES.forEach(([k, ko, en, emo]) => {
+      const b = el('button', 'cth'); b.type = 'button';
+      b.setAttribute('aria-pressed', String(k === theme));
+      b.append(el('span', 'ce', emo), document.createTextNode(ko));
+      b.addEventListener('click', () => { wake(); clPicker(k); });
+      th.appendChild(b);
+    });
+    const g = $('cl-grid'); g.replaceChildren();
+    CL_PICS[theme].forEach(([ko, en], i) => {
+      const b = el('button', 'cpic'); b.type = 'button';
+      const im = new Image();
+      im.loading = 'lazy'; im.alt = '';
+      im.src = 'coloring/' + theme + '/' + String(i + 1).padStart(2, '0') + '.png';
+      b.append(im, el('b', '', ko), el('small', '', en));
+      b.addEventListener('click', () => { wake(); clOpenPic(theme, i); });
+      g.appendChild(b);
+    });
+    g.scrollTop = 0;
+  }
+  function openColoring() {
+    show('coloring', true);
+    $('cl-play').hidden = true; $('cl-pick').hidden = false;
+    clPicker(CL.theme);
+  }
+  CL.cv = $('cl-canvas');
+  CL.ctx = CL.cv.getContext('2d');
+  CL.cv.addEventListener('pointerdown', e => { wake(); clPopHide(); e.preventDefault(); clDown(e); });
+  CL.cv.addEventListener('pointermove', clMove);
+  CL.cv.addEventListener('pointerup', clUp);
+  CL.cv.addEventListener('pointercancel', clUp);
+  new ResizeObserver(clSize).observe($('cl-boardwrap'));
+  [['cl-back', 'back', '도안 고르기로', '#4A4A4A'], ['cl-trash', 'trash', '다 지우기', '#C95F3F'], ['cl-eraser', 'eraser', '지우개', '#4A4A4A'],
+    ['cl-save', 'down', '그림 저장', '#2F8C68'], ['cl-undo', 'undo', '되돌리기', '#6C55C9']].forEach(([id, name, label, color]) => {
+    $(id).replaceChildren(clIco(name, color));
+    $(id).setAttribute('aria-label', label);
+  });
+  $('cl-back').addEventListener('click', () => { wake(); CL.gen++; CL.stroke = null; CL.busy = false; clPopHide(); $('cl-play').hidden = true; $('cl-pick').hidden = false; clPicker(CL.theme); });
+  $('cl-trash').addEventListener('click', () => {
+    wake();
+    if (!CL.paint) return;
+    clSnap(); CL.gen++; CL.busy = false;
+    CL.paint.getContext('2d').clearRect(0, 0, CL.W, CL.H);
+    clDraw(); tone(300, 0, 0.1);
+  });
+  $('cl-undo').addEventListener('click', () => {
+    wake();
+    const c = CL.undo.pop();
+    if (!c || !CL.paint) { buzz(); return; }
+    CL.gen++; CL.busy = false;
+    const pc = CL.paint.getContext('2d');
+    pc.clearRect(0, 0, CL.W, CL.H); pc.drawImage(c, 0, 0);
+    clDraw(); tone(380, 0, 0.08);
+  });
+  $('cl-eraser').addEventListener('click', () => {
+    wake();
+    CL.eraser = !CL.eraser;
+    $('cl-eraser').setAttribute('aria-pressed', String(CL.eraser));
+    tone(CL.eraser ? 300 : 520, 0, 0.07);
+  });
+  $('cl-tool').addEventListener('click', () => {
+    wake(); $('cl-colorpop').hidden = true;
+    const p = $('cl-toolpop');
+    p.hidden = !p.hidden;
+    if (!p.hidden) clToolPopBuild();
+  });
+  $('cl-color').addEventListener('click', () => {
+    wake(); $('cl-toolpop').hidden = true;
+    const p = $('cl-colorpop');
+    p.hidden = !p.hidden;
+    if (!p.hidden) clColorPopBuild();
+  });
+  $('cl-save').addEventListener('click', () => {
+    wake();
+    if (!CL.img) return;
+    const c = clBlank(), x = c.getContext('2d');
+    x.fillStyle = '#fff'; x.fillRect(0, 0, CL.W, CL.H);
+    x.drawImage(CL.paint, 0, 0);
+    x.globalCompositeOperation = 'multiply';
+    x.drawImage(CL.img, 0, 0, CL.W, CL.H);
+    try {
+      const a = document.createElement('a');
+      a.href = c.toDataURL('image/png');
+      a.download = '쓱싹쓱싹-' + CL_PICS[CL.theme][CL.pic][0] + '.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      fanfare();
+      feedback(true, '그림을 저장했어!', '사진(다운로드)에서 볼 수 있어.');
+    } catch (err) { feedback(false, '저장이 안 됐어', '인터넷으로 연 화면에서 다시 해 봐.'); }
+  });
+  $('home-c').replaceChildren(ico('home'));
+  $('home-c').setAttribute('aria-label', '홈');
+  $('home-c').addEventListener('click', () => show('home'));
+  $('host-c').replaceChildren(face('semo'));
+  clHud();
+
   // ================= 첫 화면 =================
   function show(v, quiet) {
-    ['home', 'tangram', 'quiz', 'music', 'word'].forEach(n => { $('view-' + n).hidden = n !== v; });
+    ['home', 'tangram', 'quiz', 'music', 'word', 'coloring'].forEach(n => { $('view-' + n).hidden = n !== v; });
     $('cheer').hidden = true; // 다른 화면으로 가면 떠 있던 말풍선을 치운다
     if (v !== 'quiz') { quiz.busy = false; quiz.won = false; }
     if (v !== 'music') musicStop(true); // 나가면 마이크와 노래를 모두 멈춘다
@@ -3685,6 +4292,10 @@ body { margin: 0; overscroll-behavior: none; }
       mk('polygon', { points: '10,25 8,34 19,26', class: 'c3' }, s);
       mk('rect', { x: 24, y: 33, width: 33, height: 21, rx: 10, class: 'c1 dab' }, s);
       mk('polygon', { points: '50,52 52,61 41,53', class: 'c1' }, s);
+    } else if (id === 'coloring') {
+      // 쓱싹쓱싹: 붓과 색 방울들
+      mk('path', { d: 'M46 8 L24 30 M20 34 c-3 0 -6 3 -6 6 0 2 -3 3 -2 4 2 2 9 2 11 -2 1 -3 0 -8 -3 -8 Z', class: 'ln' }, s);
+      [[14, 14, 0], [28, 10, 1], [40, 46, 3]].forEach(([cx, cy, k]) => mk('circle', { cx, cy, r: 6, class: 'c' + k + ' dab' }, s));
     } else {
       mk('circle', { cx: 11, cy: 30, r: 8, class: 'c1' }, s);
       mk('polygon', { points: '30,21 39,38 21,38', class: 'c3' }, s);
@@ -3728,18 +4339,20 @@ body { margin: 0; overscroll-behavior: none; }
     { id: 'magic', name: '뾰로롱', sub: '마방진', tone: 'coral' },
     { id: 'word', name: '이어이어', sub: '끝말잇기', tone: 'coral', area: 'word' },
     { id: 'music', name: '랄랄라', sub: '내 말이 노래가 돼', tone: 'yellow', area: 'music' },
+    { id: 'coloring', name: '쓱싹쓱싹', sub: '컬러링', tone: 'blue', area: 'art' },
     ...Object.entries(KNOW).map(([key, t], i) => ({ id: 'k-' + key, name: t.name, sub: t.sub, tone: ['blue', 'coral', 'sage', 'yellow'][i % 4], area: 'know' })),
   ];
   const go = id => {
     wake();
     if (id === 'music') { openMusic(); return; }
     if (id === 'word') { openWord(); return; }
+    if (id === 'coloring') { openColoring(); return; }
     if (id !== 'tangram') { openQuiz(id); return; }
     mark(); if (boardLevel !== level) load(cur); // 다른 놀이에서 난이도를 바꿨으면 칠교판도 그 난이도로
     show('tangram');
   };
   // 첫 화면은 영역별로 나눈다: 사고력 수학, 세상 탐험
-  [['math', '사고력 수학'], ['know', '세상 탐험 · 과학과 사회'], ['word', '말놀이 · 한글'], ['music', '신나는 음악']].forEach(([area, title]) => {
+  [['math', '사고력 수학'], ['know', '세상 탐험 · 과학과 사회'], ['word', '말놀이 · 한글'], ['art', '미술 놀이'], ['music', '신나는 음악']].forEach(([area, title]) => {
     const sec = el('section', 'area'), grid = el('div', 'grid');
     sec.append(el('h2', '', title), grid);
     TILES.filter(t => (t.area || 'math') === area).forEach(t => {
