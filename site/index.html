@@ -1215,7 +1215,8 @@ body { margin: 0; overscroll-behavior: none; }
   }
   // 아이폰이 꼼지 소리를 음악처럼 다루지 않게 한다: 게임 효과음 같은 '배경 소리'로 알리고,
   // 잠금 화면·제어 센터의 재생 정보와 단추를 비운다. 화면을 끄거나 다른 앱으로 가면 소리를 멈추고 내려놓는다.
-  try { if (navigator.audioSession) navigator.audioSession.type = 'ambient'; } catch (err) { /* 지원 안 하는 기기 */ }
+  function audioMode(type) { try { if (navigator.audioSession) navigator.audioSession.type = type; } catch (err) { /* 지원 안 하는 기기 */ } }
+  audioMode('ambient');
   const noMedia = () => {
     if (!('mediaSession' in navigator)) return;
     try { navigator.mediaSession.metadata = null; navigator.mediaSession.playbackState = 'none'; } catch (err) { /* 무시 */ }
@@ -1226,6 +1227,7 @@ body { margin: 0; overscroll-behavior: none; }
   noMedia();
   const letGo = () => {
     if (typeof hush === 'function') hush();
+    if (typeof musicStop === 'function') musicStop(false); // 노래 놀이 마이크도 내려놓는다 (마이크 켜짐 표시가 남지 않게)
     if (ac && ac.state === 'running') { try { ac.suspend(); } catch (err) { /* 무시 */ } }
     noMedia();
   };
@@ -2975,6 +2977,7 @@ body { margin: 0; overscroll-behavior: none; }
   }
   function mMicDrop() { // 마이크를 바로 내려놓는다 (마이크 켜짐 표시가 남지 않게)
     const m = M.mic; M.mic = null;
+    audioMode('ambient'); // 마이크를 내려놓으면 다시 배경 소리로
     if (!m) return;
     try { m.proc.onaudioprocess = null; m.src.disconnect(); m.proc.disconnect(); m.mute.disconnect(); } catch (err) { /* 무시 */ }
     m.stream.getTracks().forEach(t => t.stop());
@@ -3013,9 +3016,10 @@ body { margin: 0; overscroll-behavior: none; }
       }
     } catch (err) { M.srec = null; }
     let stream;
+    audioMode('play-and-record'); // 아이폰: 배경 소리('ambient') 상태로는 마이크를 못 쓴다. 듣는 동안만 녹음 모드로.
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
-    } catch (err) { if (g === M.gen) { mSet('idle'); mNoMic(); } return; }
+    } catch (err) { audioMode('ambient'); if (g === M.gen) { mSet('idle'); mNoMic(); } return; }
     if (g !== M.gen || M.state !== 'rec') { stream.getTracks().forEach(t => t.stop()); return; } // 기다리는 사이 나갔다
     wake(); // 허락을 기다리는 동안 소리가 잠들었을 수 있다
     const src = ac.createMediaStreamSource(stream);
