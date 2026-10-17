@@ -100,7 +100,7 @@ body {
 .c0 { fill: var(--p0); } .c1 { fill: var(--p1); } .c2 { fill: var(--p2); } .c3 { fill: var(--p3); }
 .c4 { fill: var(--p4); } .c5 { fill: var(--p5); } .c6 { fill: var(--p6); }
 
-#fx, #qfx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#fx, #qfx, #wfx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .win { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; }
 .win-card {
   display: flex; flex-direction: column; align-items: center; gap: 18px;
@@ -3618,6 +3618,10 @@ body { margin: 0; overscroll-behavior: none; }
     const d = WG.n && WG.n % WG.goal === 0 ? WG.goal : WG.n % WG.goal;
     $('wprog').replaceChildren(...Array.from({ length: WG.goal }, (_, i) => el('span', i < d ? 'on' : '')));
   };
+  // 타임라인을 바닥에 붙인다. 말풍선을 붙인 뒤 아래쪽 카드가 채워지면 타임라인이 줄어들어
+  // 방금 말풍선이 가려지므로, 크기가 바뀔 때마다 다시 바닥으로 따라 내려간다.
+  const wScroll = () => { const tl = $('wtl'); tl.scrollTop = tl.scrollHeight; };
+  if (window.ResizeObserver) new ResizeObserver(wScroll).observe($('wtl'));
   // 타임라인 말풍선 한 줄: 꼼지는 왼쪽, 아이(세모)는 오른쪽. now가 참이면 지금 이어야 하는 낱말(크게, 읽어 주는 단추 포함)
   function wRow(who, word, now) {
     const tl = $('wtl');
@@ -3635,7 +3639,7 @@ body { margin: 0; overscroll-behavior: none; }
     }
     if (who === 'semo') row.append(bub, face('semo')); else row.append(face('kkom'), bub);
     tl.appendChild(row);
-    tl.scrollTop = tl.scrollHeight;
+    wScroll();
   }
   // 읽어 주는 문장은 녹음 조각과 글자가 꼭 같아야 한다 (voice-list.js가 이 모양 그대로 녹음 목록을 만든다)
   const wAsk = () => `${WG.need}${wRo(WG.need)} 시작하는 말을 ` + (WG.mode === 'card' ? '찾아봐.' : '말해 봐.');
@@ -3687,6 +3691,7 @@ body { margin: 0; overscroll-behavior: none; }
     setTimeout(() => {
       if (!wShow() || !WG.busy) return;
       $('wtl').appendChild(el('div', 'wsep', '🚂 새 기차'));
+      wScroll();
       let c = wPool(null, false).filter(x => wDepth(x.w, true, 1, new Set([x.w])) >= 1);
       if (!c.length) { WG.used.clear(); c = wPool(null, false); } // 사전을 다 썼다: 처음부터 다시 쓴다
       wSpeak(c);
@@ -3752,6 +3757,7 @@ body { margin: 0; overscroll-behavior: none; }
       });
       row.appendChild(b);
     });
+    wScroll(); // 카드가 자리를 차지해 타임라인이 줄어도 마지막 말풍선이 보이게
   }
   // ----- 말하기 모드 -----
   function wMicUI() {
@@ -3761,6 +3767,7 @@ body { margin: 0; overscroll-behavior: none; }
     b.appendChild(ico('mic'));
     b.addEventListener('click', () => { wake(); if (!WG.busy && !WG.sr) wListen(b); });
     row.appendChild(b);
+    wScroll();
   }
   // 두 번 틀리면 그림 카드로 바꿀 수 있는 단추를 보여 준다
   function wCardOffer() {
@@ -3770,6 +3777,7 @@ body { margin: 0; overscroll-behavior: none; }
     b.append(el('span', 'we', '🖼️'), el('span', 'ww', '그림 카드로'));
     b.addEventListener('click', () => { wake(); WG.mode = 'card'; wCards(); });
     $('wbottom').appendChild(b);
+    wScroll();
   }
   function wNoSR() {
     feedback(false, '말을 알아듣지 못했어', '이 기기에서는 그림 카드로 놀아 보자.');
@@ -4672,7 +4680,7 @@ body { margin: 0; overscroll-behavior: none; }
 
   // 새 버전이 올라가면 알아서 새로 연다. 휴대폰(특히 홈 화면에 추가한 앱)이 예전 화면을 붙들고 있지 않게.
   // BUILD는 build.js가 만들 때 채워 넣는다 (index.html을 바로 열면 비어 있어서 건너뛴다).
-  const BUILD = '20261017013406';
+  const BUILD = '20261017031640';
   async function freshCheck() {
     if (!BUILD || document.hidden) return;
     try {
